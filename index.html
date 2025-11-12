@@ -1171,7 +1171,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.0</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
@@ -1797,140 +1797,243 @@
         }
 
         function renderMonthlyGoalProgress() {
-            const today = new Date();
-            const thisMonth = today.getMonth();
-            const thisYear = today.getFullYear();
-            
-            // Sprawdź czy to bieżący miesiąc
-            if (currentYear !== thisYear || currentMonth !== thisMonth) {
-                document.querySelector('.progress-bar-container').style.display = 'none';
-                return;
-            }
-            
-            document.querySelector('.progress-bar-container').style.display = 'block';
-            
-            const goal = getMonthlyGoal();
-            const currentStats = getMonthStatsForComparison(thisYear, thisMonth);
-            const current = currentStats.total || 0;
-            const percentage = goal > 0 ? (current / goal) * 100 : 0;
-            
-            const currentDay = today.getDate();
-            const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-            const daysRemaining = daysInMonth - currentDay;
-            
-            // Oblicz ile dni roboczych pozostało
-            const data = getProductionData();
-            let workingDaysRemaining = 0;
-            for (let day = currentDay + 1; day <= daysInMonth; day++) {
-                const date = new Date(thisYear, thisMonth, day);
-                const dayKey = getDayKey(thisYear, thisMonth, day);
-                
-                if (isDayHoliday(dayKey)) continue;
-                
-                let hasWorkingPeople = false;
-                WORKERS.forEach(worker => {
-                    const shift = getShiftForDay(worker, date);
-                    if (shift !== 0) hasWorkingPeople = true;
-                });
-                if (hasWorkingPeople) workingDaysRemaining += 1;
-            }
-            
-            const remaining = goal - current;
-            const neededPerDay = workingDaysRemaining > 0 ? remaining / workingDaysRemaining : 0;
-            const avgPerDay = currentStats.daysWithData > 0 ? parseFloat(currentStats.totalAvg) : 0;
-            
-            // Określ status
-            let statusClass = 'neutral';
-            let statusIcon = '→';
-            let statusText = 'Stabilnie';
-            
-            if (percentage >= 100) {
-                statusClass = 'positive';
-                statusIcon = '🎉';
-                statusText = 'CEL OSIĄGNIĘTY!';
-            } else if (neededPerDay <= avgPerDay) {
-                statusClass = 'positive';
-                statusIcon = '✅';
-                statusText = 'Na czasie - obecne tempo wystarczy!';
-            } else if (neededPerDay <= avgPerDay * 1.1) {
-                statusClass = 'neutral';
-                statusIcon = '⚠️';
-                statusText = 'Blisko celu - lekkie przyspieszenie potrzebne';
-            } else {
-                statusClass = 'negative';
-                statusIcon = '🔴';
-                statusText = 'Opóźnienie - potrzebne znaczne przyspieszenie!';
-            }
-            
-            // Renderuj info
-            const infoHtml = `
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Cel miesięczny</div>
-                    <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent);">${(goal / 1000).toFixed(0)} ton</div>
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+    
+    // Sprawdź czy to bieżący miesiąc
+    if (currentYear !== thisYear || currentMonth !== thisMonth) {
+        document.querySelector('.progress-bar-container').style.display = 'none';
+        return;
+    }
+    
+    document.querySelector('.progress-bar-container').style.display = 'block';
+    
+    const goal = getMonthlyGoal();
+    const currentStats = getMonthStatsComplete(thisYear, thisMonth);
+    const current = currentStats.total || 0;
+    const percentage = goal > 0 ? (current / goal) * 100 : 0;
+    
+    const currentDay = today.getDate();
+    const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+    
+    // Oblicz ile dni roboczych pozostało
+    const data = getProductionData();
+    let workingDaysRemaining = 0;
+    for (let day = currentDay + 1; day <= daysInMonth; day++) {
+        const date = new Date(thisYear, thisMonth, day);
+        const dayKey = getDayKey(thisYear, thisMonth, day);
+        
+        if (isDayHoliday(dayKey)) continue;
+        
+        let hasWorkingPeople = false;
+        WORKERS.forEach(worker => {
+            const shift = getShiftForDay(worker, date);
+            if (shift !== 0) hasWorkingPeople = true;
+        });
+        if (hasWorkingPeople) workingDaysRemaining += 1;
+    }
+    
+    const remaining = goal - current;
+    const neededPerDay = workingDaysRemaining > 0 ? remaining / workingDaysRemaining : 0;
+    const avgPerDay = currentStats.completeDays > 0 ? parseFloat(currentStats.totalAvg) : 0;
+    
+    // Określ status
+    let statusClass = 'neutral';
+    let statusIcon = '→';
+    let statusText = 'Stabilnie';
+    
+    if (percentage >= 100) {
+        statusClass = 'positive';
+        statusIcon = '🎉';
+        statusText = 'CEL OSIĄGNIĘTY!';
+    } else if (currentStats.completeDays < 3) {
+        statusClass = 'neutral';
+        statusIcon = 'ℹ️';
+        statusText = 'Za mało danych do oceny tempa';
+    } else if (neededPerDay <= avgPerDay) {
+        statusClass = 'positive';
+        statusIcon = '✅';
+        statusText = 'Na czasie - obecne tempo wystarczy!';
+    } else if (neededPerDay <= avgPerDay * 1.1) {
+        statusClass = 'neutral';
+        statusIcon = '⚠️';
+        statusText = 'Blisko celu - lekkie przyspieszenie potrzebne';
+    } else {
+        statusClass = 'negative';
+        statusIcon = '🔴';
+        statusText = 'Opóźnienie - potrzebne znaczne przyspieszenie!';
+    }
+    
+    // Renderuj info
+    const infoHtml = `
+        <div style="flex: 1; min-width: 200px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Cel miesięczny</div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent);">${(goal / 1000).toFixed(0)} ton</div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Dotychczas</div>
+            <div style="font-size: 1.3rem; font-weight: 700;">${(current / 1000).toFixed(1)} ton</div>
+            <div style="color: var(--text-secondary); font-size: 0.75rem;">(z ${currentStats.completeDays} pełnych dni)</div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Pozostało</div>
+            <div style="font-size: 1.3rem; font-weight: 700;">${(remaining / 1000).toFixed(1)} ton</div>
+        </div>
+        <div style="flex: 1; min-width: 200px;">
+            <div style="color: var(--text-secondary); font-size: 0.9rem;">Dni robocze pozostało</div>
+            <div style="font-size: 1.3rem; font-weight: 700;">${workingDaysRemaining} dni</div>
+        </div>
+    `;
+    
+    document.getElementById('monthlyGoalInfo').innerHTML = infoHtml;
+    
+    // Renderuj progress bar
+    const progressFill = document.getElementById('goalProgressFill');
+    const cappedPercentage = Math.min(percentage, 100);
+    progressFill.style.width = cappedPercentage + '%';
+    
+    if (percentage >= 100) {
+        progressFill.style.background = 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)';
+        progressFill.textContent = '🎉 ' + percentage.toFixed(1) + '%';
+    } else if (percentage >= 80) {
+        progressFill.style.background = 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)';
+        progressFill.textContent = percentage.toFixed(1) + '%';
+    } else if (percentage >= 50) {
+        progressFill.style.background = 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)';
+        progressFill.textContent = percentage.toFixed(1) + '%';
+    } else {
+        progressFill.style.background = 'linear-gradient(90deg, #f44336 0%, #ef5350 100%)';
+        progressFill.textContent = percentage.toFixed(1) + '%';
+    }
+    
+    // Renderuj status message
+    let statusMessageHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div class="kpi-change ${statusClass}" style="margin: 0;">
+                <span>${statusIcon} ${statusText}</span>
+            </div>
+    `;
+    
+    if (percentage < 100 && workingDaysRemaining > 0 && currentStats.completeDays >= 3) {
+        const comparisonClass = neededPerDay <= avgPerDay ? 'positive' : 'negative';
+        statusMessageHtml += `
+            <div style="text-align: right;">
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">Potrzebne dziennie</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: ${comparisonClass === 'positive' ? 'var(--success)' : 'var(--danger)'};">
+                    ${(neededPerDay / 1000).toFixed(1)} ton/dzień
                 </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Dotychczas</div>
-                    <div style="font-size: 1.3rem; font-weight: 700;">${(current / 1000).toFixed(1)} ton</div>
+                <div style="color: var(--text-secondary); font-size: 0.85rem;">
+                    Obecne tempo: ${(avgPerDay / 1000).toFixed(1)} ton/dzień
                 </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Pozostało</div>
-                    <div style="font-size: 1.3rem; font-weight: 700;">${(remaining / 1000).toFixed(1)} ton</div>
-                </div>
-                <div style="flex: 1; min-width: 200px;">
-                    <div style="color: var(--text-secondary); font-size: 0.9rem;">Dni robocze pozostało</div>
-                    <div style="font-size: 1.3rem; font-weight: 700;">${workingDaysRemaining} dni</div>
-                </div>
-            `;
-            
-            document.getElementById('monthlyGoalInfo').innerHTML = infoHtml;
-            
-            // Renderuj progress bar
-            const progressFill = document.getElementById('goalProgressFill');
-            const cappedPercentage = Math.min(percentage, 100);
-            progressFill.style.width = cappedPercentage + '%';
-            
-            if (percentage >= 100) {
-                progressFill.style.background = 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)';
-                progressFill.textContent = '🎉 ' + percentage.toFixed(1) + '%';
-            } else if (percentage >= 80) {
-                progressFill.style.background = 'linear-gradient(90deg, #4caf50 0%, #66bb6a 100%)';
-                progressFill.textContent = percentage.toFixed(1) + '%';
-            } else if (percentage >= 50) {
-                progressFill.style.background = 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)';
-                progressFill.textContent = percentage.toFixed(1) + '%';
-            } else {
-                progressFill.style.background = 'linear-gradient(90deg, #f44336 0%, #ef5350 100%)';
-                progressFill.textContent = percentage.toFixed(1) + '%';
-            }
-            
-            // Renderuj status message
-            let statusMessageHtml = `
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <div class="kpi-change ${statusClass}" style="margin: 0;">
-                        <span>${statusIcon} ${statusText}</span>
-                    </div>
-            `;
-            
-            if (percentage < 100 && workingDaysRemaining > 0) {
-                const comparisonClass = neededPerDay <= avgPerDay ? 'positive' : 'negative';
-                statusMessageHtml += `
-                    <div style="text-align: right;">
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">Potrzebne dziennie</div>
-                        <div style="font-size: 1.1rem; font-weight: 700; color: ${comparisonClass === 'positive' ? 'var(--success)' : 'var(--danger)'};">
-                            ${(neededPerDay / 1000).toFixed(1)} ton/dzień
-                        </div>
-                        <div style="color: var(--text-secondary); font-size: 0.85rem;">
-                            Obecne tempo: ${(avgPerDay / 1000).toFixed(1)} ton/dzień
-                        </div>
-                    </div>
-                `;
-            }
-            
-            statusMessageHtml += `</div>`;
-            
-            document.getElementById('goalStatusMessage').innerHTML = statusMessageHtml;
-        }
+            </div>
+        `;
+    }
+    
+    statusMessageHtml += `</div>`;
+    
+    document.getElementById('goalStatusMessage').innerHTML = statusMessageHtml;
+}
 
+
+
+
+         // Dodaj nową funkcję pomocniczą do sprawdzania czy dzień jest pełny
+function isDayComplete(year, month, day) {
+    const data = getProductionData();
+    const date = new Date(year, month, day);
+    const dayKey = getDayKey(year, month, day);
+    const dayData = data[dayKey] || {};
+    
+    // Jeśli święto, nie jest to "pełny dzień" do statystyk
+    if (isDayHoliday(dayKey)) {
+        return false;
+    }
+    
+    let workersExpected = 0;
+    let workersReported = 0;
+    
+    WORKERS.forEach(worker => {
+        const shift = getShiftForDay(worker, date);
+        if (shift !== 0) {
+            workersExpected++;
+            if (dayData[worker] !== undefined) {
+                workersReported++;
+            }
+        }
+    });
+    
+    // Pełny dzień = wszyscy oczekiwani pracownicy raportowali
+    return workersExpected > 0 && workersExpected === workersReported;
+}
+
+// Funkcja do pobierania statystyk z pełnych dni
+function getMonthStatsComplete(year, month, maxDays = null) {
+    const data = getProductionData();
+    const stats = {
+        totalAvg: 0,
+        total: 0,
+        completeDays: 0,
+        workers: {}
+    };
+    
+    WORKERS.forEach(worker => {
+        stats.workers[worker] = { total: 0, days: 0, avg: 0 };
+    });
+    
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+    const isCurrentMonth = (year === today.getFullYear() && month === today.getMonth());
+    
+    let totalSum = 0;
+    let completeDaysCount = 0;
+    let daysChecked = 0;
+    
+    for (let day = 1; day <= daysInMonth; day++) {
+        // Jeśli to bieżący miesiąc i dzień jest w przyszłości, pomijamy
+        if (isCurrentMonth && day > today.getDate()) {
+            break;
+        }
+        
+        const dayKey = getDayKey(year, month, day);
+        const dayData = data[dayKey] || {};
+        const isComplete = isDayComplete(year, month, day);
+        
+        if (isComplete) {
+            completeDaysCount++;
+            
+            WORKERS.forEach(worker => {
+                if (dayData[worker] !== undefined) {
+                    stats.workers[worker].total += dayData[worker];
+                    stats.workers[worker].days += 1;
+                    totalSum += dayData[worker];
+                }
+            });
+            
+            daysChecked++;
+            
+            // Jeśli podano maxDays, przestajemy po osiągnięciu tej liczby pełnych dni
+            if (maxDays !== null && completeDaysCount >= maxDays) {
+                break;
+            }
+        }
+    }
+    
+    stats.totalAvg = completeDaysCount > 0 ? (totalSum / completeDaysCount).toFixed(1) : 0;
+    stats.total = totalSum;
+    stats.completeDays = completeDaysCount;
+    
+    WORKERS.forEach(worker => {
+        const workerStats = stats.workers[worker];
+        workerStats.avg = workerStats.days > 0 ? (workerStats.total / workerStats.days).toFixed(1) : 0;
+    });
+    
+    return stats;
+}   
+
+
+
+        
         function renderDashboard() {
             renderMonthlyGoalProgress();
             renderKPIDashboard();
@@ -1939,122 +2042,81 @@
         }
 
         function renderKPIDashboard() {
-            const data = getProductionData();
-            const today = new Date();
-            const thisMonth = today.getMonth();
-            const thisYear = today.getFullYear();
-            
-            // Statystyki dla bieżącego miesiąca
-            const currentStats = getMonthStatsForComparison(thisYear, thisMonth);
-            
-            // Statystyki dla poprzedniego miesiąca
-            const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-            const prevYear = thisMonth === 0 ? thisYear - 1 : thisYear;
-            const prevStats = getMonthStatsForComparison(prevYear, prevMonth);
-            
-            // Sprawdź czy bieżący miesiąc jest w trakcie
-            const isCurrentMonth = true; // zawsze true bo renderKPIDashboard działa tylko dla dashboardu (bieżącego miesiąca)
-            const currentDay = today.getDate();
-            
-            // Dla porównania "dzień do dnia" - oblicz statystyki poprzedniego miesiąca DO tego samego dnia
-            let prevMonthSameDayStats = { total: 0, totalAvg: 0, daysWithData: 0 };
-            
-            if (isCurrentMonth) {
-                // Zlicz produkcję z poprzedniego miesiąca do tego samego dnia co dziś
-                let totalSoFar = 0;
-                let daysWithData = 0;
-                
-                const prevMonthDaysInMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
-                const daysToCompare = Math.min(currentDay, prevMonthDaysInMonth);
-                
-                for (let day = 1; day <= daysToCompare; day++) {
-                    const dayKey = getDayKey(prevYear, prevMonth, day);
-                    const dayData = data[dayKey] || {};
-                    
-                    if (isDayHoliday(dayKey)) {
-                        continue;
-                    }
-                    
-                    let hasDayData = false;
-                    WORKERS.forEach(worker => {
-                        if (dayData[worker] !== undefined) {
-                            totalSoFar += dayData[worker];
-                            hasDayData = true;
-                        }
-                    });
-                    
-                    if (hasDayData) {
-                        daysWithData += 1;
-                    }
-                }
-                
-                prevMonthSameDayStats.total = totalSoFar;
-                prevMonthSameDayStats.daysWithData = daysWithData;
-                prevMonthSameDayStats.totalAvg = daysWithData > 0 ? (totalSoFar / daysWithData).toFixed(1) : 0;
-            }
-            
-            const kpis = [
-                {
-                    icon: '📦',
-                    title: 'Produkcja w tym miesiącu',
-                    value: currentStats.total ? currentStats.total.toFixed(0) + ' kg' : '0 kg',
-                    change: calculateKPIChange(currentStats.total || 0, prevMonthSameDayStats.total || 0),
-                    prevValue: `${prevMonthSameDayStats.total.toFixed(0)} kg (do ${currentDay}. dnia)`,
-                    compareLabel: 'vs poprz. mies.'
-                },
-                {
-                    icon: '📊',
-                    title: 'Średnia dzienna',
-                    value: currentStats.totalAvg ? parseFloat(currentStats.totalAvg).toFixed(1) + ' kg' : '0 kg',
-                    change: calculateKPIChange(parseFloat(currentStats.totalAvg) || 0, parseFloat(prevStats.totalAvg) || 0),
-                    prevValue: prevStats.totalAvg ? parseFloat(prevStats.totalAvg).toFixed(1) + ' kg' : '0 kg',
-                    compareLabel: 'vs poprz. mies.'
-                },
-                {
-                    icon: '🔮',
-                    title: 'Prognoza na koniec miesiąca',
-                    value: getMonthForecast(currentStats),
-                    change: null
-                },
-                {
-                    icon: '🎯',
-                    title: 'Dni z danymi',
-                    value: currentStats.daysWithData || 0,
-                    change: null
-                }
-            ];
-            
-            let html = '';
-            kpis.forEach(kpi => {
-                let changeHtml = '';
-                if (kpi.change !== null) {
-                    const changeClass = kpi.change.percent >= 10 ? 'positive' : 
-                                      kpi.change.percent <= -10 ? 'negative' : 'neutral';
-                    const icon = kpi.change.percent > 0 ? '↗' : 
-                               kpi.change.percent < 0 ? '↘' : '→';
-                    
-                    changeHtml = `
-                        <div class="kpi-change ${changeClass}">
-                            <span>${icon}${kpi.change.percent > 0 ? '+' : ''}${kpi.change.percent.toFixed(1)}%</span>
-                            <span style="font-size: 0.8rem; opacity: 0.8;">${kpi.compareLabel}: ${kpi.prevValue}</span>
-                        </div>
-                    `;
-                }
-                
-                html += `
-                    <div class="kpi-card">
-                        <div class="kpi-header">
-                            <div class="kpi-icon">${kpi.icon}</div>
-                            <div class="kpi-title">${kpi.title}</div>
-                        </div>
-                        <div class="kpi-value">${kpi.value}</div>
-                        ${changeHtml}
-                    </div>
-                `;
-            });
-            
-            document.getElementById('kpiDashboard').innerHTML = html;
+    const data = getProductionData();
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+    
+    // Statystyki dla bieżącego miesiąca (tylko pełne dni)
+    const currentStats = getMonthStatsComplete(thisYear, thisMonth);
+    
+    // Statystyki dla poprzedniego miesiąca (tyle samo pełnych dni co w bieżącym)
+    const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
+    const prevYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    const prevStats = getMonthStatsComplete(prevYear, prevMonth, currentStats.completeDays);
+    
+    const kpis = [
+        {
+            icon: '📦',
+            title: 'Produkcja w tym miesiącu',
+            value: currentStats.total ? currentStats.total.toFixed(0) + ' kg' : '0 kg',
+            change: calculateKPIChange(currentStats.total || 0, prevStats.total || 0),
+            prevValue: `${prevStats.total.toFixed(0)} kg`,
+            compareLabel: `vs poprz. mies. (${currentStats.completeDays} pełnych dni)`
+        },
+        {
+            icon: '📊',
+            title: 'Średnia dzienna',
+            value: currentStats.totalAvg ? parseFloat(currentStats.totalAvg).toFixed(1) + ' kg' : '0 kg',
+            change: calculateKPIChange(parseFloat(currentStats.totalAvg) || 0, parseFloat(prevStats.totalAvg) || 0),
+            prevValue: prevStats.totalAvg ? parseFloat(prevStats.totalAvg).toFixed(1) + ' kg' : '0 kg',
+            compareLabel: `vs poprz. mies. (z ${currentStats.completeDays} pełnych dni)`
+        },
+        {
+            icon: '🔮',
+            title: 'Prognoza na koniec miesiąca',
+            value: getMonthForecastComplete(currentStats),
+            change: null
+        },
+        {
+            icon: '🎯',
+            title: 'Pełne dni z danymi',
+            value: currentStats.completeDays || 0,
+            change: null
         }
+    ];
+    
+    let html = '';
+    kpis.forEach(kpi => {
+        let changeHtml = '';
+        if (kpi.change !== null) {
+            const changeClass = kpi.change.percent >= 10 ? 'positive' : 
+                              kpi.change.percent <= -10 ? 'negative' : 'neutral';
+            const icon = kpi.change.percent > 0 ? '↗' : 
+                       kpi.change.percent < 0 ? '↘' : '→';
+            
+            changeHtml = `
+                <div class="kpi-change ${changeClass}">
+                    <span>${icon}${kpi.change.percent > 0 ? '+' : ''}${kpi.change.percent.toFixed(1)}%</span>
+                    <span style="font-size: 0.8rem; opacity: 0.8;">${kpi.compareLabel}: ${kpi.prevValue}</span>
+                </div>
+            `;
+        }
+        
+        html += `
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-icon">${kpi.icon}</div>
+                    <div class="kpi-title">${kpi.title}</div>
+                </div>
+                <div class="kpi-value">${kpi.value}</div>
+                ${changeHtml}
+            </div>
+        `;
+    });
+    
+    document.getElementById('kpiDashboard').innerHTML = html;
+}
 
         function calculateKPIChange(current, previous) {
             if (previous === 0) return { percent: 0, diff: current };
@@ -2063,295 +2125,254 @@
             return { percent, diff };
         }
 
-        function getMonthForecast(stats) {
-            const today = new Date();
-            const thisMonth = today.getMonth();
-            const thisYear = today.getFullYear();
-            
-            // Sprawdź czy to bieżący miesiąc
-            if (currentYear !== thisYear || currentMonth !== thisMonth) {
-                return 'Tylko dla bieżącego miesiąca';
-            }
-            
-            const data = getProductionData();
-            const currentDay = today.getDate();
-            const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-            
-            // Znajdź ostatni dzień z KOMPLETNYMI danymi
-            let lastCompleteDay = 0;
-            for (let day = 1; day <= currentDay; day++) {
-                const date = new Date(thisYear, thisMonth, day);
-                const dayKey = getDayKey(thisYear, thisMonth, day);
-                const dayData = data[dayKey] || {};
-                
-                // Sprawdź czy ten dzień ma dane od wszystkich pracowników którzy mieli pracować
-                let allWorkersReported = true;
-                let anyWorkerShouldWork = false;
-                
-                WORKERS.forEach(worker => {
-                    const shift = getShiftForDay(worker, date);
-                    if (shift !== 0) {
-                        anyWorkerShouldWork = true;
-                        if (dayData[worker] === undefined) {
-                            allWorkersReported = false;
-                        }
-                    }
-                });
-                
-                // Jeśli ktoś miał pracować i wszyscy raportowali - dzień kompletny
-                if (anyWorkerShouldWork && allWorkersReported) {
-                    lastCompleteDay = day;
-                }
-            }
-            
-            // Jeśli nie ma żadnego kompletnego dnia, użyj wszystkich dostępnych danych
-            if (lastCompleteDay === 0) {
-                lastCompleteDay = currentDay;
-            }
-            
-            // Oblicz sumę dotychczasową DO ostatniego kompletnego dnia
-            let totalSoFar = 0;
-            let daysWithDataSoFar = 0;
-            
-            for (let day = 1; day <= lastCompleteDay; day++) {
-                const dayKey = getDayKey(thisYear, thisMonth, day);
-                const dayData = data[dayKey] || {};
-                
-                let hasDayData = false;
-                WORKERS.forEach(worker => {
-                    if (dayData[worker] !== undefined) {
-                        totalSoFar += dayData[worker];
-                        hasDayData = true;
-                    }
-                });
-                
-                if (hasDayData) {
-                    daysWithDataSoFar += 1;
-                }
-            }
-            
-            if (daysWithDataSoFar === 0) {
-                return 'Brak danych';
-            }
-            
-            const avgPerDay = totalSoFar / daysWithDataSoFar;
-            
-            // Szacuj pozostałe dni robocze (od lastCompleteDay + 1)
-            let estimatedRemainingDays = 0;
-            for (let day = lastCompleteDay + 1; day <= daysInMonth; day++) {
-                const date = new Date(thisYear, thisMonth, day);
-                const dayKey = getDayKey(thisYear, thisMonth, day);
-                
-                if (isDayHoliday(dayKey)) continue;
-                
-                let hasWorkingPeople = false;
-                WORKERS.forEach(worker => {
-                    const shift = getShiftForDay(worker, date);
-                    if (shift !== 0) hasWorkingPeople = true;
-                });
-                if (hasWorkingPeople) estimatedRemainingDays += 1;
-            }
-            
-            const forecastTotal = totalSoFar + (avgPerDay * estimatedRemainingDays);
-            
-            return forecastTotal.toFixed(0) + ' kg';
-        }
+        function getMonthForecastComplete(stats) {
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+    
+    // Sprawdź czy to bieżący miesiąc
+    if (currentYear !== thisYear || currentMonth !== thisMonth) {
+        return 'Tylko dla bieżącego miesiąca';
+    }
+    
+    const completeDays = stats.completeDays || 0;
+    const totalSoFar = stats.total || 0;
+    
+    // Logika prognozy w zależności od liczby pełnych dni
+    if (completeDays < 3) {
+        return 'Za mało danych (min. 3 pełne dni)';
+    }
+    
+    const avgPerDay = completeDays > 0 ? totalSoFar / completeDays : 0;
+    
+    // Policz pozostałe dni robocze
+    const data = getProductionData();
+    const currentDay = today.getDate();
+    const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+    
+    let estimatedRemainingDays = 0;
+    for (let day = currentDay + 1; day <= daysInMonth; day++) {
+        const date = new Date(thisYear, thisMonth, day);
+        const dayKey = getDayKey(thisYear, thisMonth, day);
+        
+        if (isDayHoliday(dayKey)) continue;
+        
+        let hasWorkingPeople = false;
+        WORKERS.forEach(worker => {
+            const shift = getShiftForDay(worker, date);
+            if (shift !== 0) hasWorkingPeople = true;
+        });
+        if (hasWorkingPeople) estimatedRemainingDays += 1;
+    }
+    
+    const forecastTotal = totalSoFar + (avgPerDay * estimatedRemainingDays);
+    
+    // Dodaj etykietę w zależności od liczby pełnych dni
+    let label = '';
+    if (completeDays >= 5) {
+        label = `${forecastTotal.toFixed(0)} kg`;
+    } else if (completeDays >= 3) {
+        label = `~${forecastTotal.toFixed(0)} kg ⚠️`;
+    }
+    
+    return label;
+}
 
         function renderDashboardCharts() {
-            const ctx1 = document.getElementById('dashboardTrendChart');
-            if (!ctx1) return;
-            
-            if (dashboardTrendChart) {
-                dashboardTrendChart.destroy();
-            }
-            
-            // Trend ostatnich 3 miesięcy
-            const today = new Date();
-            const months = [];
-            const totals = [];
-            
-            for (let i = 2; i >= 0; i--) {
-                const month = today.getMonth() - i;
-                const year = month < 0 ? today.getFullYear() - 1 : today.getFullYear();
-                const adjustedMonth = month < 0 ? 12 + month : month;
-                
-                const stats = getMonthStatsForComparison(year, adjustedMonth);
-                months.push(MONTHS[adjustedMonth]);
-                totals.push(stats.total || 0);
-            }
-            
-            dashboardTrendChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: months,
-                    datasets: [{
-                        label: 'Produkcja (kg)',
-                        data: totals,
-                        borderColor: 'rgb(255, 107, 53)',
-                        backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 6,
-                        pointHoverRadius: 8,
-                        pointBackgroundColor: 'rgb(255, 107, 53)'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            padding: 12,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.parsed.y.toFixed(0) + ' kg';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(255,255,255,0.1)' },
-                            ticks: { 
-                                color: '#b0b0b0',
-                                callback: function(value) {
-                                    return value + ' kg';
-                                }
-                            }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#b0b0b0' }
+    const ctx1 = document.getElementById('dashboardTrendChart');
+    if (!ctx1) return;
+    
+    if (dashboardTrendChart) {
+        dashboardTrendChart.destroy();
+    }
+    
+    // Trend ostatnich 3 miesięcy - używamy pełnych dni
+    const today = new Date();
+    const months = [];
+    const totals = [];
+    
+    for (let i = 2; i >= 0; i--) {
+        const month = today.getMonth() - i;
+        const year = month < 0 ? today.getFullYear() - 1 : today.getFullYear();
+        const adjustedMonth = month < 0 ? 12 + month : month;
+        
+        const stats = getMonthStatsComplete(year, adjustedMonth);
+        months.push(MONTHS[adjustedMonth]);
+        totals.push(stats.total || 0);
+    }
+    
+    dashboardTrendChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Produkcja (kg)',
+                data: totals,
+                borderColor: 'rgb(255, 107, 53)',
+                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                borderWidth: 3,
+                tension: 0.4,
+                fill: true,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                pointBackgroundColor: 'rgb(255, 107, 53)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toFixed(0) + ' kg';
                         }
                     }
                 }
-            });
-            
-            // Performance comparison
-            const ctx2 = document.getElementById('dashboardPerformanceChart');
-            if (!ctx2) return;
-            
-            if (dashboardPerformanceChart) {
-                dashboardPerformanceChart.destroy();
-            }
-            
-            const currentStats = getMonthStatsForComparison(today.getFullYear(), today.getMonth());
-            const workerAvgs = WORKERS.map(w => {
-                const stats = currentStats.workers[w];
-                return stats && stats.days >= 3 ? parseFloat(stats.avg) : 0;
-            });
-            
-            dashboardPerformanceChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: WORKERS,
-                    datasets: [{
-                        label: 'Średnia dzienna (kg)',
-                        data: workerAvgs,
-                        backgroundColor: [
-                            'rgba(123, 237, 159, 0.8)',
-                            'rgba(255, 165, 2, 0.8)',
-                            'rgba(112, 161, 255, 0.8)',
-                            'rgba(255, 99, 72, 0.8)'
-                        ],
-                        borderColor: [
-                            'rgb(46, 213, 115)',
-                            'rgb(255, 127, 0)',
-                            'rgb(30, 144, 255)',
-                            'rgb(255, 71, 87)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            backgroundColor: 'rgba(0,0,0,0.8)',
-                            padding: 12,
-                            callbacks: {
-                                label: function(context) {
-                                    return context.parsed.y.toFixed(1) + ' kg/dzień';
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(255,255,255,0.1)' },
-                            ticks: { 
-                                color: '#b0b0b0',
-                                callback: function(value) {
-                                    return value + ' kg';
-                                }
-                            }
-                        },
-                        x: {
-                            grid: { display: false },
-                            ticks: { 
-                                color: '#b0b0b0',
-                                font: { size: 14, weight: 'bold' }
-                            }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { 
+                        color: '#b0b0b0',
+                        callback: function(value) {
+                            return value + ' kg';
                         }
                     }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { color: '#b0b0b0' }
                 }
-            });
+            }
         }
+    });
+    
+    // Performance comparison - używamy pełnych dni
+    const ctx2 = document.getElementById('dashboardPerformanceChart');
+    if (!ctx2) return;
+    
+    if (dashboardPerformanceChart) {
+        dashboardPerformanceChart.destroy();
+    }
+    
+    const currentStats = getMonthStatsComplete(today.getFullYear(), today.getMonth());
+    const workerAvgs = WORKERS.map(w => {
+        const stats = currentStats.workers[w];
+        return stats && stats.days >= 3 ? parseFloat(stats.avg) : 0;
+    });
+    
+    dashboardPerformanceChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+            labels: WORKERS,
+            datasets: [{
+                label: 'Średnia dzienna (kg)',
+                data: workerAvgs,
+                backgroundColor: [
+                    'rgba(123, 237, 159, 0.8)',
+                    'rgba(255, 165, 2, 0.8)',
+                    'rgba(112, 161, 255, 0.8)',
+                    'rgba(255, 99, 72, 0.8)'
+                ],
+                borderColor: [
+                    'rgb(46, 213, 115)',
+                    'rgb(255, 127, 0)',
+                    'rgb(30, 144, 255)',
+                    'rgb(255, 71, 87)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    padding: 12,
+                    callbacks: {
+                        label: function(context) {
+                            return context.parsed.y.toFixed(1) + ' kg/dzień';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: { color: 'rgba(255,255,255,0.1)' },
+                    ticks: { 
+                        color: '#b0b0b0',
+                        callback: function(value) {
+                            return value + ' kg';
+                        }
+                    }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { 
+                        color: '#b0b0b0',
+                        font: { size: 14, weight: 'bold' }
+                    }
+                }
+            }
+        }
+    });
+}
 
         function renderDashboardPodium() {
-            const today = new Date();
-            const currentStats = getMonthStatsForComparison(today.getFullYear(), today.getMonth());
-            const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
-            const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
-            const prevStats = getMonthStatsForComparison(prevYear, prevMonth);
-            
-            const sortedWorkers = WORKERS.map(worker => {
-                const stats = currentStats.workers[worker] || { total: 0, avg: 0, days: 0 };
-                const prevWorkerStats = prevStats.workers[worker] || { avg: 0 };
-                
-                return {
-                    name: worker,
-                    total: stats.total,
-                    avg: parseFloat(stats.avg),
-                    days: stats.days,
-                    prevAvg: parseFloat(prevWorkerStats.avg)
-                };
-            }).sort((a, b) => b.total - a.total);
-            
-            const medals = ['🥇', '🥈', '🥉', ''];
-            let html = '';
-            
-            sortedWorkers.forEach((worker, index) => {
-                const rank = index + 1;
-                
-                let workerComparisonHtml = '';
-                if (worker.days >= 3 && worker.prevAvg > 0) {
-                    const comparison = calculateComparison(worker.avg, worker.prevAvg);
-                    workerComparisonHtml = `<div class="podium-label comparison-text ${comparison.class}">Poprz. mies.: ${worker.prevAvg.toFixed(1)} kg/dzień ${comparison.icon} ${comparison.text}</div>`;
-                } else if (worker.days >= 3) {
-                    workerComparisonHtml = `<div class="podium-label comparison-text">Poprz. mies.: brak danych</div>`;
-                }
-                
-                html += `
-                    <div class="podium-card rank-${rank} ${worker.name.toLowerCase()}">
-                        <div class="podium-rank">${medals[index]}</div>
-                        <div class="podium-name">${worker.name}</div>
-                        <div class="podium-value">${worker.total.toFixed(0)} kg</div>
-                        <div class="podium-label">Średnia: ${worker.avg.toFixed(1)} kg/dzień • ${worker.days} dni</div>
-                        ${workerComparisonHtml}
-                    </div>
-                `;
-            });
-            
-            document.getElementById('dashboardPodium').innerHTML = html;
+    const today = new Date();
+    const currentStats = getMonthStatsComplete(today.getFullYear(), today.getMonth());
+    const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
+    const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
+    const prevStats = getMonthStatsComplete(prevYear, prevMonth);
+    
+    const sortedWorkers = WORKERS.map(worker => {
+        const stats = currentStats.workers[worker] || { total: 0, avg: 0, days: 0 };
+        const prevWorkerStats = prevStats.workers[worker] || { avg: 0 };
+        
+        return {
+            name: worker,
+            total: stats.total,
+            avg: parseFloat(stats.avg),
+            days: stats.days,
+            prevAvg: parseFloat(prevWorkerStats.avg)
+        };
+    }).sort((a, b) => b.total - a.total);
+    
+    const medals = ['🥇', '🥈', '🥉', ''];
+    let html = '';
+    
+    sortedWorkers.forEach((worker, index) => {
+        const rank = index + 1;
+        
+        let workerComparisonHtml = '';
+        if (worker.days >= 3 && worker.prevAvg > 0) {
+            const comparison = calculateComparison(worker.avg, worker.prevAvg);
+            workerComparisonHtml = `<div class="podium-label comparison-text ${comparison.class}">Poprz. mies.: ${worker.prevAvg.toFixed(1)} kg/dzień ${comparison.icon} ${comparison.text}</div>`;
+        } else if (worker.days >= 3) {
+            workerComparisonHtml = `<div class="podium-label comparison-text">Poprz. mies.: brak danych</div>`;
         }
+        
+        html += `
+            <div class="podium-card rank-${rank} ${worker.name.toLowerCase()}">
+                <div class="podium-rank">${medals[index]}</div>
+                <div class="podium-name">${worker.name}</div>
+                <div class="podium-value">${worker.total.toFixed(0)} kg</div>
+                <div class="podium-label">Średnia: ${worker.avg.toFixed(1)} kg/dzień • ${worker.days} pełnych dni</div>
+                ${workerComparisonHtml}
+            </div>
+        `;
+    });
+    
+    document.getElementById('dashboardPodium').innerHTML = html;
+}
 
         // Analytics View
         function renderAnalytics() {
