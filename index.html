@@ -1178,7 +1178,7 @@
                     <span id="syncText">Zsynchronizowano</span>
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-                <button class="excel-btn" onclick="exportToExcel()">📊 Export Excel</button>
+                <button class="excel-btn" onclick="generateLastMonthPDF()">📄 Raport Poprzedni Miesiąc</button>
                 <button class="btn btn-secondary" onclick="exportData()">💾 Backup</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -1362,8 +1362,9 @@
     <div id="toast"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
@@ -1676,95 +1677,134 @@
             return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
 
-        // Excel Export Function
-        function exportToExcel() {
-            const wb = XLSX.utils.book_new();
+        // PDF Export Function for Previous Month
+        async function generateLastMonthPDF() {
+            // 1. Ustalenie daty (poprzedni miesiąc)
+            const now = new Date();
+            let year = now.getFullYear();
+            let month = now.getMonth() - 1; // 0-11 (gdzie 0 to Styczeń)
+
+            // Obsługa przełomu roku (jeśli jesteśmy w styczniu, cofamy do grudnia zeszłego roku)
+            if (month < 0) {
+                month = 11;
+                year -= 1;
+            }
+
+            const monthName = MONTHS[month];
+
+            // 2. Przygotowanie PDF
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Nagłówek
+            doc.setFontSize(18);
+            doc.text(`Raport Produkcji: ${monthName} ${year}`, 14, 20);
+
+            doc.setFontSize(11);
+            doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
+
+            // 3. Zbieranie danych z bazy
+            const tableRows = [];
+            let totalProduction = 0;
+            const workerTotals = {};
+            WORKERS.forEach(w => workerTotals[w] = 0);
+            let workingDays = 0;
+
+            // Oblicz liczbę dni w poprzednim miesiącu
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
             const data = getProductionData();
-            
-            // Arkusz 1: Dane miesięczne
-            const monthlyData = [];
-            monthlyData.push(['Data', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA', 'Zmiana Kamil', 'Zmiana Igor', 'Zmiana Jarek', 'Zmiana Wowa']);
-            
-            const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-            for (let day = 1; day <= daysInMonth; day++) {
-                const date = new Date(currentYear, currentMonth, day);
-                const dayKey = getDayKey(currentYear, currentMonth, day);
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayKey = getDayKey(year, month, d);
                 const dayData = data[dayKey] || {};
-                
-                const row = [
-                    `${day} ${MONTHS[currentMonth]} ${currentYear}`,
-                    dayData['Kamil'] || 0,
-                    dayData['Igor'] || 0,
-                    dayData['Jarek'] || 0,
-                    dayData['Wowa'] || 0,
-                    (dayData['Kamil'] || 0) + (dayData['Igor'] || 0) + (dayData['Jarek'] || 0) + (dayData['Wowa'] || 0),
-                    getShift('Kamil', date),
-                    getShift('Igor', date),
-                    getShift('Jarek', date),
-                    getShift('Wowa', date)
-                ];
-                monthlyData.push(row);
-            }
-            
-            const ws1 = XLSX.utils.aoa_to_sheet(monthlyData);
-            XLSX.utils.book_append_sheet(wb, ws1, "Dane miesięczne");
-            
-            // Arkusz 2: Zestawienie roczne
-            const yearlyData = [];
-            yearlyData.push(['Miesiąc', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']);
-            
-            for (let month = 0; month < 12; month++) {
-                const monthStats = {};
-                WORKERS.forEach(w => monthStats[w] = 0);
-                
-                const daysInMonth = new Date(currentYear, month + 1, 0).getDate();
-                for (let day = 1; day <= daysInMonth; day++) {
-                    const dayKey = getDayKey(currentYear, month, day);
-                    const dayData = data[dayKey] || {};
-                    
-                    WORKERS.forEach(worker => {
-                        if (dayData[worker]) monthStats[worker] += dayData[worker];
-                    });
+
+                // Suma dla dnia
+                let dayTotal = 0;
+                const workerValues = {};
+
+                WORKERS.forEach(worker => {
+                    const value = dayData[worker] || 0;
+                    workerValues[worker] = value;
+                    dayTotal += value;
+                    workerTotals[worker] += value;
+                });
+
+                // Dodaj wiersz tylko jeśli była jakakolwiek produkcja
+                if (dayTotal > 0) {
+                    const date = new Date(year, month, d);
+                    const dayString = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    tableRows.push([
+                        dayString,
+                        workerValues['Kamil'],
+                        workerValues['Igor'],
+                        workerValues['Jarek'],
+                        workerValues['Wowa'],
+                        dayTotal
+                    ]);
+
+                    totalProduction += dayTotal;
+                    workingDays++;
                 }
-                
-                const total = WORKERS.reduce((sum, w) => sum + monthStats[w], 0);
-                yearlyData.push([
-                    MONTHS[month],
-                    monthStats['Kamil'],
-                    monthStats['Igor'],
-                    monthStats['Jarek'],
-                    monthStats['Wowa'],
-                    total
-                ]);
             }
-            
-            const ws2 = XLSX.utils.aoa_to_sheet(yearlyData);
-            XLSX.utils.book_append_sheet(wb, ws2, "Zestawienie roczne");
-            
-            // Arkusz 3: Statystyki
-            const statsData = [];
-            statsData.push(['Statystyka', 'Wartość']);
-            
-            const monthStats = getMonthStatsForComparison(currentYear, currentMonth);
-            statsData.push(['Bieżący miesiąc', `${MONTHS[currentMonth]} ${currentYear}`]);
-            statsData.push(['Suma produkcji', monthStats.total || 0]);
-            statsData.push(['Średnia dzienna', monthStats.totalAvg || 0]);
-            statsData.push(['']);
-            
+
+            // Jeśli brak danych
+            if (tableRows.length === 0) {
+                alert(`Brak danych produkcyjnych dla miesiaca: ${monthName} ${year}`);
+                return;
+            }
+
+            // Obliczenie średniej dziennej
+            const avgDaily = workingDays > 0 ? (totalProduction / workingDays).toFixed(0) : 0;
+
+            // 4. Sekcja Podsumowania (przed tabelą)
+            doc.setDrawColor(200);
+            doc.line(14, 32, 196, 32); // Linia pozioma
+
+            doc.setFontSize(12);
+            doc.text(`Suma produkcji: ${totalProduction} kg`, 14, 40);
+            doc.text(`Srednia dzienna: ${avgDaily} kg`, 14, 46);
+            doc.text(`Liczba dni roboczych: ${workingDays}`, 14, 52);
+
+            // Podsumowanie per pracownik
+            let yPos = 58;
             WORKERS.forEach(worker => {
-                const workerStats = monthStats.workers[worker] || { total: 0, avg: 0, days: 0 };
-                statsData.push([`${worker} - Suma`, workerStats.total]);
-                statsData.push([`${worker} - Średnia`, workerStats.avg]);
-                statsData.push([`${worker} - Dni pracy`, workerStats.days]);
-                statsData.push(['']);
+                const avg = workingDays > 0 ? (workerTotals[worker] / workingDays).toFixed(0) : 0;
+                doc.text(`${worker}: ${workerTotals[worker]} kg (srednia: ${avg} kg/dzien)`, 14, yPos);
+                yPos += 6;
             });
-            
-            const ws3 = XLSX.utils.aoa_to_sheet(statsData);
-            XLSX.utils.book_append_sheet(wb, ws3, "Statystyki");
-            
-            // Zapisz plik
-            XLSX.writeFile(wb, `Produkcja_Flexo_${currentYear}_${MONTHS[currentMonth]}.xlsx`);
-            showToast('📊 Eksport do Excel zakończony!');
+
+            // 5. Generowanie Tabeli
+            doc.autoTable({
+                startY: yPos + 4,
+                head: [['Data', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
+                body: tableRows,
+                theme: 'grid',
+                headStyles: { fillColor: [255, 107, 53] }, // Kolor pomarańczowy (accent z aplikacji)
+                styles: { fontSize: 9, halign: 'center' },
+                columnStyles: {
+                    0: { cellWidth: 30, halign: 'left' }, // Data
+                    1: { cellWidth: 30 }, // Kamil
+                    2: { cellWidth: 30 }, // Igor
+                    3: { cellWidth: 30 }, // Jarek
+                    4: { cellWidth: 30 }, // Wowa
+                    5: { cellWidth: 30, fontStyle: 'bold' } // SUMA
+                },
+                foot: [[
+                    'RAZEM:',
+                    workerTotals['Kamil'],
+                    workerTotals['Igor'],
+                    workerTotals['Jarek'],
+                    workerTotals['Wowa'],
+                    totalProduction
+                ]],
+                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' }
+            });
+
+            // 6. Zapisz plik
+            const monthString = (month + 1).toString().padStart(2, '0');
+            doc.save(`Raport_Produkcji_${year}_${monthString}_${monthName}.pdf`);
+            showToast('📄 Raport PDF wygenerowany!');
         }
 
         // Dashboard KPI rendering
