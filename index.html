@@ -1247,7 +1247,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.4</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.5</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
@@ -2148,11 +2148,11 @@
             doc.setLanguage("pl");
 
             // Header
-            doc.setFontSize(18);
-            doc.text(fixPolishChars(`Raport Produkcji: ${monthName} ${year}`), 14, 20);
+            doc.setFontSize(16);
+            doc.text(`Raport Produkcji: ${monthName} ${year}`, 14, 18);
 
-            doc.setFontSize(11);
-            doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
+            doc.setFontSize(10);
+            doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 25);
 
             // Collect data from database
             const tableRows = [];
@@ -2217,45 +2217,53 @@
 
             // If no data
             if (tableRows.length === 0) {
-                alert(`Brak danych produkcyjnych dla miesiaca: ${monthName} ${year}`);
+                alert(`Brak danych produkcyjnych dla miesiąca: ${monthName} ${year}`);
                 return;
             }
 
             // Summary section (before table)
             doc.setDrawColor(200);
-            doc.line(14, 32, 196, 32); // Horizontal line
+            doc.line(14, 28, 196, 28); // Horizontal line
 
-            doc.setFontSize(12);
-            doc.text(`Suma produkcji: ${totalProduction} kg`, 14, 40);
+            doc.setFontSize(11);
+            doc.text(`Suma produkcji: ${totalProduction} kg`, 14, 34);
 
             // Summary per worker
-            let yPos = 46;
+            let yPos = 40;
             WORKERS.forEach(worker => {
                 const stats = workerStats[worker];
                 const avg = stats.workingDays > 0 ? (stats.total / stats.workingDays).toFixed(0) : 0;
                 doc.text(
-                    fixPolishChars(`${worker}: ${stats.total} kg | ${stats.workingDays} dni roboczych | srednia: ${avg} kg/dzien`),
+                    `${worker}: ${stats.total} kg | ${stats.workingDays} dni roboczych | średnia: ${avg} kg/dzień`,
                     14,
                     yPos
                 );
-                yPos += 6;
+                yPos += 5;
             });
 
             // Generate Table
             doc.autoTable({
-                startY: yPos + 4,
+                startY: yPos + 2,
                 head: [['Data', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
                 body: tableRows,
                 theme: 'grid',
-                headStyles: { fillColor: [255, 107, 53] }, // Orange accent color
-                styles: { fontSize: 9, halign: 'center' },
+                headStyles: {
+                    fillColor: [255, 107, 53],
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+                styles: {
+                    fontSize: 7,
+                    halign: 'center',
+                    cellPadding: 1.5
+                },
                 columnStyles: {
-                    0: { cellWidth: 30, halign: 'left' }, // Date
-                    1: { cellWidth: 30 }, // Kamil
-                    2: { cellWidth: 30 }, // Igor
-                    3: { cellWidth: 30 }, // Jarek
-                    4: { cellWidth: 30 }, // Wowa
-                    5: { cellWidth: 30, fontStyle: 'bold' } // SUMA
+                    0: { cellWidth: 28, halign: 'left' },
+                    1: { cellWidth: 28 },
+                    2: { cellWidth: 28 },
+                    3: { cellWidth: 28 },
+                    4: { cellWidth: 28 },
+                    5: { cellWidth: 28, fontStyle: 'bold' }
                 },
                 foot: [[
                     'RAZEM:',
@@ -2265,7 +2273,13 @@
                     workerStats['Wowa'].total,
                     totalProduction
                 ]],
-                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' }
+                footStyles: {
+                    fillColor: [41, 128, 185],
+                    fontStyle: 'bold',
+                    fontSize: 8,
+                    cellPadding: 2
+                },
+                margin: { top: 10, bottom: 10 }
             });
 
             // Save file
@@ -2292,7 +2306,7 @@
             doc.setLanguage("pl");
 
             doc.setFontSize(20);
-            doc.text(fixPolishChars(`Raport Roczny Produkcji ${year}`), 14, 20);
+            doc.text(`Raport Roczny Produkcji ${year}`, 14, 20);
 
             doc.setFontSize(11);
             doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
@@ -2340,7 +2354,7 @@
 
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
-            doc.text(fixPolishChars('Podsumowanie roczne:'), 14, 42);
+            doc.text('Podsumowanie roczne:', 14, 42);
             doc.setFont("helvetica", "normal");
 
             let yPos = 48;
@@ -2352,7 +2366,7 @@
                 const stats = workerYearlyStats[worker];
                 const avg = stats.days > 0 ? (stats.total / stats.days).toFixed(1) : 0;
                 doc.text(
-                    fixPolishChars(`${worker}: ${stats.total.toFixed(0)} kg | ${stats.days} dni | srednia: ${avg} kg/dzien`),
+                    `${worker}: ${stats.total.toFixed(0)} kg | ${stats.days} dni | średnia: ${avg} kg/dzień`,
                     14,
                     yPos
                 );
@@ -2370,7 +2384,7 @@
 
             doc.autoTable({
                 startY: yPos + 4,
-                head: [['Miesiac', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
+                head: [['Miesiąc', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
                 body: tableData,
                 foot: [[
                     'RAZEM:',
@@ -2410,17 +2424,17 @@
             doc.setLanguage("pl");
 
             doc.setFontSize(20);
-            doc.text(fixPolishChars(`Porownanie Kwartalow ${year}`), 14, 20);
+            doc.text(`Porównanie Kwartałów ${year}`, 14, 20);
 
             doc.setFontSize(11);
             doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
             doc.line(14, 32, 196, 32);
 
             const quarters = [
-                { name: 'Q1', months: [0, 1, 2], label: 'Q1 (Styczen-Marzec)' },
-                { name: 'Q2', months: [3, 4, 5], label: 'Q2 (Kwiecien-Czerwiec)' },
-                { name: 'Q3', months: [6, 7, 8], label: 'Q3 (Lipiec-Wrzesien)' },
-                { name: 'Q4', months: [9, 10, 11], label: 'Q4 (Pazdziernik-Grudzien)' }
+                { name: 'Q1', months: [0, 1, 2], label: 'Q1 (Styczeń-Marzec)' },
+                { name: 'Q2', months: [3, 4, 5], label: 'Q2 (Kwiecień-Czerwiec)' },
+                { name: 'Q3', months: [6, 7, 8], label: 'Q3 (Lipiec-Wrzesień)' },
+                { name: 'Q4', months: [9, 10, 11], label: 'Q4 (Październik-Grudzień)' }
             ];
 
             const data = getProductionData();
@@ -2467,7 +2481,7 @@
 
             doc.setFontSize(14);
             doc.setFont("helvetica", "bold");
-            doc.text(fixPolishChars('Podsumowanie kwartalne:'), 14, 42);
+            doc.text('Podsumowanie kwartalne:', 14, 42);
             doc.setFont("helvetica", "normal");
 
             let yPos = 48;
@@ -2476,7 +2490,7 @@
             quarterlyStats.forEach(q => {
                 const avg = q.days > 0 ? (q.total / q.days).toFixed(1) : 0;
                 doc.text(
-                    fixPolishChars(`${q.label}: ${q.total.toFixed(0)} kg | ${q.days} dni | srednia: ${avg} kg/dzien`),
+                    `${q.label}: ${q.total.toFixed(0)} kg | ${q.days} dni | średnia: ${avg} kg/dzień`,
                     14,
                     yPos
                 );
@@ -2506,7 +2520,7 @@
 
             doc.autoTable({
                 startY: yPos,
-                head: [['Kwartal', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA', 'Dni', 'Srednia']],
+                head: [['Kwartał', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA', 'Dni', 'Średnia']],
                 body: tableData,
                 foot: [totalRow],
                 theme: 'grid',
@@ -2528,7 +2542,7 @@
             doc.addPage();
             doc.setFontSize(16);
             doc.setFont("helvetica", "bold");
-            doc.text(fixPolishChars('Szczegolowa analiza pracownikow'), 14, 20);
+            doc.text('Szczegółowa analiza pracowników', 14, 20);
             doc.setFont("helvetica", "normal");
 
             yPos = 30;
@@ -2536,7 +2550,7 @@
             WORKERS.forEach(worker => {
                 doc.setFontSize(12);
                 doc.setFont("helvetica", "bold");
-                doc.text(fixPolishChars(`${worker}:`), 14, yPos);
+                doc.text(`${worker}:`, 14, yPos);
                 doc.setFont("helvetica", "normal");
                 yPos += 6;
 
@@ -2545,7 +2559,7 @@
                     const workerStats = q.workers[worker];
                     const avg = workerStats.days > 0 ? (workerStats.total / workerStats.days).toFixed(1) : 0;
                     doc.text(
-                        fixPolishChars(`  ${q.name}: ${workerStats.total.toFixed(0)} kg | ${workerStats.days} dni | srednia: ${avg} kg/dzien`),
+                        `  ${q.name}: ${workerStats.total.toFixed(0)} kg | ${workerStats.days} dni | średnia: ${avg} kg/dzień`,
                         14,
                         yPos
                     );
