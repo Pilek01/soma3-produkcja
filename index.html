@@ -1178,7 +1178,7 @@
                     <span id="syncText">Zsynchronizowano</span>
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-                <button class="excel-btn" onclick="generateLastMonthPDF()">📄 Raport Poprzedni Miesiąc</button>
+                <button class="excel-btn" onclick="openMonthSelectionForPDF()">📄 Raport PDF</button>
                 <button class="btn btn-secondary" onclick="exportData()">💾 Backup</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -1677,61 +1677,118 @@
             return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
 
-        // PDF Export Function for Previous Month
-        async function generateLastMonthPDF() {
-            // 1. Ustalenie daty (poprzedni miesiąc)
-            const now = new Date();
-            let year = now.getFullYear();
-            let month = now.getMonth() - 1; // 0-11 (gdzie 0 to Styczeń)
+        // PDF Export Functions
 
-            // Obsługa przełomu roku (jeśli jesteśmy w styczniu, cofamy do grudnia zeszłego roku)
-            if (month < 0) {
-                month = 11;
-                year -= 1;
+        // Function to open month selection dialog
+        function openMonthSelectionForPDF() {
+            const data = getProductionData();
+            const availableMonths = new Set();
+
+            // Find all months with production data
+            Object.keys(data).forEach(dayKey => {
+                const dayData = data[dayKey];
+                // Check if there's any production data for this day
+                const hasData = WORKERS.some(worker => dayData[worker] && dayData[worker] > 0);
+                if (hasData) {
+                    // Extract year-month from dayKey (format: YYYY-MM-DD)
+                    const [year, month] = dayKey.split('-');
+                    availableMonths.add(`${year}-${month}`);
+                }
+            });
+
+            if (availableMonths.size === 0) {
+                alert('Brak danych produkcyjnych do wygenerowania raportu!');
+                return;
             }
 
+            // Sort months (newest first)
+            const sortedMonths = Array.from(availableMonths).sort().reverse();
+
+            // Create selection dialog
+            let message = 'Wybierz miesiąc do raportu:\n\n';
+            const monthOptions = sortedMonths.map((yearMonth, index) => {
+                const [year, month] = yearMonth.split('-');
+                const monthName = MONTHS[parseInt(month) - 1];
+                return `${index + 1}. ${monthName} ${year}`;
+            });
+
+            message += monthOptions.join('\n');
+            message += '\n\nWpisz numer miesiąca:';
+
+            const selection = prompt(message);
+
+            if (selection === null) return; // User cancelled
+
+            const selectedIndex = parseInt(selection) - 1;
+            if (selectedIndex >= 0 && selectedIndex < sortedMonths.length) {
+                const [year, month] = sortedMonths[selectedIndex].split('-');
+                generateMonthPDF(parseInt(year), parseInt(month) - 1);
+            } else {
+                alert('Nieprawidłowy wybór!');
+            }
+        }
+
+        // Function to generate PDF for selected month
+        function generateMonthPDF(year, month) {
             const monthName = MONTHS[month];
 
-            // 2. Przygotowanie PDF
+            // Prepare PDF
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Nagłówek
+            // Header
             doc.setFontSize(18);
             doc.text(`Raport Produkcji: ${monthName} ${year}`, 14, 20);
 
             doc.setFontSize(11);
             doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
 
-            // 3. Zbieranie danych z bazy
+            // Collect data from database
             const tableRows = [];
             let totalProduction = 0;
-            const workerTotals = {};
-            WORKERS.forEach(w => workerTotals[w] = 0);
-            let workingDays = 0;
+            const workerStats = {};
 
-            // Oblicz liczbę dni w poprzednim miesiącu
+            // Initialize worker stats
+            WORKERS.forEach(w => {
+                workerStats[w] = {
+                    total: 0,
+                    workingDays: 0
+                };
+            });
+
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const data = getProductionData();
 
             for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
                 const dayKey = getDayKey(year, month, d);
                 const dayData = data[dayKey] || {};
 
-                // Suma dla dnia
-                let dayTotal = 0;
+                // Check shifts for each worker
                 const workerValues = {};
+                let dayTotal = 0;
+                let hasAnyProduction = false;
 
                 WORKERS.forEach(worker => {
-                    const value = dayData[worker] || 0;
-                    workerValues[worker] = value;
-                    dayTotal += value;
-                    workerTotals[worker] += value;
+                    const shift = getShiftForDay(worker, date);
+                    const production = dayData[worker] || 0;
+
+                    if (shift === 0) {
+                        // Day off - show "-"
+                        workerValues[worker] = '-';
+                    } else {
+                        // Working day
+                        workerValues[worker] = production;
+                        workerStats[worker].total += production;
+                        workerStats[worker].workingDays++;
+                        dayTotal += production;
+                        if (production > 0) hasAnyProduction = true;
+                    }
                 });
 
-                // Dodaj wiersz tylko jeśli była jakakolwiek produkcja
-                if (dayTotal > 0) {
-                    const date = new Date(year, month, d);
+                // Add row only if any worker had production or was working
+                const hasWorkingDay = WORKERS.some(w => workerValues[w] !== '-');
+                if (hasWorkingDay && hasAnyProduction) {
                     const dayString = date.toLocaleDateString('pl-PL', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
                     tableRows.push([
@@ -1744,46 +1801,51 @@
                     ]);
 
                     totalProduction += dayTotal;
-                    workingDays++;
                 }
             }
 
-            // Jeśli brak danych
+            // If no data
             if (tableRows.length === 0) {
                 alert(`Brak danych produkcyjnych dla miesiaca: ${monthName} ${year}`);
                 return;
             }
 
-            // Obliczenie średniej dziennej
-            const avgDaily = workingDays > 0 ? (totalProduction / workingDays).toFixed(0) : 0;
+            // Calculate total working days (across all workers)
+            const totalWorkingDays = WORKERS.reduce((sum, w) => sum + workerStats[w].workingDays, 0);
+            const avgDailyAllWorkers = totalWorkingDays > 0 ? (totalProduction / totalWorkingDays).toFixed(0) : 0;
 
-            // 4. Sekcja Podsumowania (przed tabelą)
+            // Summary section (before table)
             doc.setDrawColor(200);
-            doc.line(14, 32, 196, 32); // Linia pozioma
+            doc.line(14, 32, 196, 32); // Horizontal line
 
             doc.setFontSize(12);
             doc.text(`Suma produkcji: ${totalProduction} kg`, 14, 40);
-            doc.text(`Srednia dzienna: ${avgDaily} kg`, 14, 46);
-            doc.text(`Liczba dni roboczych: ${workingDays}`, 14, 52);
+            doc.text(`Srednia dzienna (wszystkie zmiany): ${avgDailyAllWorkers} kg`, 14, 46);
+            doc.text(`Liczba zmian roboczych: ${totalWorkingDays}`, 14, 52);
 
-            // Podsumowanie per pracownik
+            // Summary per worker
             let yPos = 58;
             WORKERS.forEach(worker => {
-                const avg = workingDays > 0 ? (workerTotals[worker] / workingDays).toFixed(0) : 0;
-                doc.text(`${worker}: ${workerTotals[worker]} kg (srednia: ${avg} kg/dzien)`, 14, yPos);
+                const stats = workerStats[worker];
+                const avg = stats.workingDays > 0 ? (stats.total / stats.workingDays).toFixed(0) : 0;
+                doc.text(
+                    `${worker}: ${stats.total} kg | ${stats.workingDays} dni roboczych | srednia: ${avg} kg/dzien`,
+                    14,
+                    yPos
+                );
                 yPos += 6;
             });
 
-            // 5. Generowanie Tabeli
+            // Generate Table
             doc.autoTable({
                 startY: yPos + 4,
                 head: [['Data', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
                 body: tableRows,
                 theme: 'grid',
-                headStyles: { fillColor: [255, 107, 53] }, // Kolor pomarańczowy (accent z aplikacji)
+                headStyles: { fillColor: [255, 107, 53] }, // Orange accent color
                 styles: { fontSize: 9, halign: 'center' },
                 columnStyles: {
-                    0: { cellWidth: 30, halign: 'left' }, // Data
+                    0: { cellWidth: 30, halign: 'left' }, // Date
                     1: { cellWidth: 30 }, // Kamil
                     2: { cellWidth: 30 }, // Igor
                     3: { cellWidth: 30 }, // Jarek
@@ -1792,16 +1854,16 @@
                 },
                 foot: [[
                     'RAZEM:',
-                    workerTotals['Kamil'],
-                    workerTotals['Igor'],
-                    workerTotals['Jarek'],
-                    workerTotals['Wowa'],
+                    workerStats['Kamil'].total,
+                    workerStats['Igor'].total,
+                    workerStats['Jarek'].total,
+                    workerStats['Wowa'].total,
                     totalProduction
                 ]],
                 footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' }
             });
 
-            // 6. Zapisz plik
+            // Save file
             const monthString = (month + 1).toString().padStart(2, '0');
             doc.save(`Raport_Produkcji_${year}_${monthString}_${monthName}.pdf`);
             showToast('📄 Raport PDF wygenerowany!');
