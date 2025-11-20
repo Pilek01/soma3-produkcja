@@ -1247,7 +1247,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.6</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.7</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
@@ -2143,9 +2143,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Set font for better Polish character support
-            doc.setFont("helvetica");
-            doc.setLanguage("pl");
+            // Use Times font - supports Polish characters and works offline!
+            doc.setFont("times");
 
             // Header
             doc.setFontSize(16);
@@ -2304,8 +2303,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            doc.setFont("helvetica");
-            doc.setLanguage("pl");
+            // Use Times font - supports Polish characters and works offline!
+            doc.setFont("times");
 
             doc.setFontSize(20);
             doc.text(`Raport Roczny Produkcji ${year}`, 14, 20);
@@ -2432,8 +2431,8 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            doc.setFont("helvetica");
-            doc.setLanguage("pl");
+            // Use Times font - supports Polish characters and works offline!
+            doc.setFont("times");
 
             doc.setFontSize(20);
             doc.text(`Porównanie Kwartałów ${year}`, 14, 20);
