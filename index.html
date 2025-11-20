@@ -1166,19 +1166,104 @@
         .comparison-text.trend-stable {
             color: var(--warning);
         }
+
+        /* PDF Dropdown Menu */
+        .pdf-dropdown {
+            position: relative;
+        }
+
+        .pdf-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 0.5rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            z-index: 1000;
+            min-width: 220px;
+            overflow: hidden;
+        }
+
+        .pdf-menu.active {
+            display: block;
+            animation: slideDown 0.2s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pdf-menu button {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .pdf-menu button:hover {
+            background: var(--bg-tertiary);
+            color: var(--accent);
+        }
+
+        .pdf-menu button:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+
+        /* Quick Entry */
+        .quick-entry-container {
+            display: flex;
+            align-items: center;
+        }
+
+        #modalBody input[type="number"] {
+            transition: all 0.3s;
+        }
+
+        #modalBody input[type="number"]:focus {
+            transform: scale(1.02);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.3</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.4</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
                     <span id="syncText">Zsynchronizowano</span>
                 </div>
                 <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
-                <button class="excel-btn" onclick="openMonthSelectionForPDF()">📄 Raport PDF</button>
+                <div class="pdf-dropdown">
+                    <button class="excel-btn" onclick="togglePDFMenu()">
+                        📄 Raport PDF ▼
+                    </button>
+                    <div id="pdfMenu" class="pdf-menu">
+                        <button onclick="openMonthSelectionForPDF()">📅 Miesięczny</button>
+                        <button onclick="generateYearlyPDF()">📊 Roczny</button>
+                        <button onclick="generateQuarterlyComparisonPDF()">📈 Porównanie kwartałów</button>
+                    </div>
+                </div>
                 <button class="btn btn-secondary" onclick="exportData()">💾 Backup</button>
                 <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
                 <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
@@ -1253,6 +1338,11 @@
                         <option value="2025" selected>2025</option>
                         <option value="2026">2026</option>
                     </select>
+                </div>
+                <div class="quick-entry-container">
+                    <button class="btn" onclick="openQuickEntry()" style="display: flex; align-items: center; gap: 0.5rem;">
+                        ⚡ Szybkie wprowadzanie
+                    </button>
                 </div>
             </div>
 
@@ -1683,6 +1773,280 @@
             return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
 
+        // Data Validation
+        function validateProductionValue(value) {
+            const parsed = parseFloat(value);
+
+            if (isNaN(parsed)) {
+                return null;
+            }
+
+            if (parsed < 0) {
+                showToast('⚠️ Wartość nie może być ujemna!');
+                return null;
+            }
+
+            if (parsed > 10000) {
+                if (!confirm(`⚠️ Wartość ${parsed} kg wydaje się bardzo duża. Czy na pewno?`)) {
+                    return null;
+                }
+            }
+
+            return parsed;
+        }
+
+        // Quick Entry Functions
+        function openQuickEntry() {
+            const today = new Date();
+            let quickEntryDay = today.getDate();
+            let quickEntryMonth = today.getMonth();
+            let quickEntryYear = today.getFullYear();
+
+            if (currentMonth !== quickEntryMonth || currentYear !== quickEntryYear) {
+                currentMonth = quickEntryMonth;
+                currentYear = quickEntryYear;
+                renderCalendar();
+            }
+
+            renderQuickEntryModal(quickEntryDay, quickEntryMonth, quickEntryYear);
+        }
+
+        function renderQuickEntryModal(day, month, year) {
+            const date = new Date(year, month, day);
+            const dayKey = getDayKey(year, month, day);
+            const data = getProductionData();
+            const dayData = data[dayKey] || {};
+            const isHoliday = isDayHoliday(dayKey);
+
+            const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+            const dayName = dayNames[date.getDay()];
+            const dateString = `${day} ${MONTHS[month]} ${year} (${dayName})`;
+
+            const modalTitle = `
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
+                    <button class="btn btn-secondary" onclick="quickEntryNavigate(-1)" style="padding: 0.5rem 1rem;">
+                        ◀ Poprzedni
+                    </button>
+                    <span style="flex: 1; text-align: center;">⚡ Szybkie wprowadzanie<br>
+                    <span style="font-size: 1rem; color: var(--text-secondary);">${dateString}</span></span>
+                    <button class="btn btn-secondary" onclick="quickEntryNavigate(1)" style="padding: 0.5rem 1rem;">
+                        Następny ▶
+                    </button>
+                </div>
+            `;
+            document.getElementById('modalTitle').innerHTML = modalTitle;
+
+            let html = '';
+
+            if (isHoliday) {
+                html += `
+                    <div style="text-align: center; padding: 2rem; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin-bottom: 1rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎄</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">Dzień wolny od pracy</div>
+                        <div style="color: var(--text-secondary); margin-top: 0.5rem;">Ten dzień jest oznaczony jako święto</div>
+                    </div>
+                `;
+            } else {
+                const workingWorkers = [];
+                WORKERS.forEach(worker => {
+                    const shift = getShiftForDay(worker, date);
+                    if (shift !== 0) {
+                        workingWorkers.push({
+                            name: worker,
+                            shift: shift,
+                            value: dayData[worker] !== undefined ? dayData[worker] : ''
+                        });
+                    }
+                });
+
+                if (workingWorkers.length === 0) {
+                    html += `
+                        <div style="text-align: center; padding: 2rem; background: var(--bg-tertiary); border-radius: 8px;">
+                            <div style="font-size: 2rem; margin-bottom: 1rem;">💤</div>
+                            <div style="font-size: 1.1rem; color: var(--text-secondary);">Wszyscy pracownicy mają wolne tego dnia</div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 4px solid var(--success);">
+                            <div style="font-weight: 600; margin-bottom: 0.5rem;">ℹ️ Wskazówki:</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                                • Enter = przejdź do następnego pola<br>
+                                • Shift+Enter = zapisz i zamknij<br>
+                                • Escape = zamknij bez zapisywania
+                            </div>
+                        </div>
+                    `;
+
+                    workingWorkers.forEach((worker, index) => {
+                        const shiftText = worker.shift === 1 ? '☀️ Rano' :
+                                         worker.shift === 2 ? '🌆 Popołudnie' : '🌙 Noc';
+
+                        html += `
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+                                    <div class="worker-label ${worker.name.toLowerCase()}-label" style="flex: 0 0 120px;">
+                                        ${worker.name}
+                                    </div>
+                                    <div class="shift-indicator" style="flex: 1;">
+                                        ${shiftText}
+                                    </div>
+                                </label>
+                                <input type="number"
+                                       id="quick-input-${worker.name}"
+                                       value="${worker.value}"
+                                       placeholder="Wpisz kg (np. 2500)"
+                                       min="0"
+                                       step="0.1"
+                                       onkeydown="handleQuickEntryKeydown(event, ${index}, ${workingWorkers.length})"
+                                       style="font-size: 1.1rem; padding: 1rem;">
+                            </div>
+                        `;
+                    });
+                }
+            }
+
+            document.getElementById('modalBody').innerHTML = html;
+
+            const buttonsHtml = `
+                <button class="btn" onclick="saveQuickEntry(${day}, ${month}, ${year})">
+                    💾 Zapisz i zamknij
+                </button>
+                <button class="btn btn-secondary" onclick="closeModal()">
+                    ❌ Anuluj
+                </button>
+            `;
+            document.getElementById('modalButtons').innerHTML = buttonsHtml;
+
+            document.getElementById('productionModal').classList.add('active');
+
+            setTimeout(() => {
+                const firstInput = document.querySelector('#modalBody input:not([disabled])');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+
+        function handleQuickEntryKeydown(event, currentIndex, totalInputs) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+
+                if (event.shiftKey) {
+                    const titleText = document.querySelector('#modalTitle span').textContent;
+                    const day = parseInt(titleText.match(/(\d+)/)[0]);
+                    const monthText = titleText.match(/\d+ (\w+)/)[1];
+                    const month = MONTHS.indexOf(monthText);
+                    const year = parseInt(titleText.match(/(\d{4})/)[0]);
+                    saveQuickEntry(day, month, year);
+                } else {
+                    const inputs = Array.from(document.querySelectorAll('#modalBody input:not([disabled])'));
+                    if (currentIndex < totalInputs - 1) {
+                        inputs[currentIndex + 1].focus();
+                    } else {
+                        const titleText = document.querySelector('#modalTitle span').textContent;
+                        const day = parseInt(titleText.match(/(\d+)/)[0]);
+                        const monthText = titleText.match(/\d+ (\w+)/)[1];
+                        const month = MONTHS.indexOf(monthText);
+                        const year = parseInt(titleText.match(/(\d{4})/)[0]);
+                        saveQuickEntryAndNext(day, month, year);
+                    }
+                }
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                closeModal();
+            }
+        }
+
+        function quickEntryNavigate(delta) {
+            const titleText = document.querySelector('#modalTitle span').textContent;
+            const day = parseInt(titleText.match(/(\d+)/)[0]);
+            const monthText = titleText.match(/\d+ (\w+)/)[1];
+            const month = MONTHS.indexOf(monthText);
+            const year = parseInt(titleText.match(/(\d{4})/)[0]);
+
+            const date = new Date(year, month, day);
+            date.setDate(date.getDate() + delta);
+
+            const newDay = date.getDate();
+            const newMonth = date.getMonth();
+            const newYear = date.getFullYear();
+
+            if (newMonth !== currentMonth || newYear !== currentYear) {
+                currentMonth = newMonth;
+                currentYear = newYear;
+                renderCalendar();
+            }
+
+            renderQuickEntryModal(newDay, newMonth, newYear);
+        }
+
+        function saveQuickEntry(day, month, year) {
+            const dayKey = getDayKey(year, month, day);
+            const data = getProductionData();
+
+            if (!data[dayKey]) {
+                data[dayKey] = {};
+            }
+
+            let hasChanges = false;
+            let hasInvalidValue = false;
+
+            WORKERS.forEach(worker => {
+                const input = document.getElementById(`quick-input-${worker}`);
+                if (input && input.value !== '') {
+                    const value = validateProductionValue(input.value);
+                    if (value !== null) {
+                        data[dayKey][worker] = value;
+                        hasChanges = true;
+                    } else {
+                        hasInvalidValue = true;
+                        input.focus();
+                        input.select();
+                        return;
+                    }
+                } else if (input && input.value === '') {
+                    delete data[dayKey][worker];
+                }
+            });
+
+            if (hasInvalidValue) {
+                return;
+            }
+
+            if (Object.keys(data[dayKey]).length === 0) {
+                delete data[dayKey];
+            }
+
+            if (hasChanges) {
+                setProductionData(data);
+                showToast('✅ Dane zapisane!');
+            }
+
+            closeModal();
+            renderCalendar();
+            renderDashboard();
+        }
+
+        function saveQuickEntryAndNext(day, month, year) {
+            saveQuickEntry(day, month, year);
+
+            setTimeout(() => {
+                const date = new Date(year, month, day);
+                date.setDate(date.getDate() + 1);
+
+                const newDay = date.getDate();
+                const newMonth = date.getMonth();
+                const newYear = date.getFullYear();
+
+                if (newMonth !== currentMonth || newYear !== currentYear) {
+                    currentMonth = newMonth;
+                    currentYear = newYear;
+                    renderCalendar();
+                }
+
+                renderQuickEntryModal(newDay, newMonth, newYear);
+            }, 300);
+        }
+
         // PDF Export Functions
 
         // Function to open month selection dialog
@@ -1908,6 +2272,296 @@
             const monthString = (month + 1).toString().padStart(2, '0');
             doc.save(`Raport_Produkcji_${year}_${monthString}_${monthName}.pdf`);
             showToast('📄 Raport PDF wygenerowany!');
+        }
+
+        // PDF Menu Toggle
+        function togglePDFMenu() {
+            const menu = document.getElementById('pdfMenu');
+            menu.classList.toggle('active');
+        }
+
+        // Yearly PDF Report
+        function generateYearlyPDF() {
+            document.getElementById('pdfMenu').classList.remove('active');
+
+            const year = currentYear;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("helvetica");
+            doc.setLanguage("pl");
+
+            doc.setFontSize(20);
+            doc.text(fixPolishChars(`Raport Roczny Produkcji ${year}`), 14, 20);
+
+            doc.setFontSize(11);
+            doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
+            doc.line(14, 32, 196, 32);
+
+            const data = getProductionData();
+            const monthlyData = [];
+            const workerYearlyStats = {};
+            let yearTotal = 0;
+
+            WORKERS.forEach(w => {
+                workerYearlyStats[w] = { total: 0, days: 0 };
+            });
+
+            for (let month = 0; month < 12; month++) {
+                const monthStats = {
+                    name: MONTHS[month],
+                    workers: {},
+                    total: 0
+                };
+
+                WORKERS.forEach(w => {
+                    monthStats.workers[w] = 0;
+                });
+
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                for (let day = 1; day <= daysInMonth; day++) {
+                    const dayKey = getDayKey(year, month, day);
+                    const dayData = data[dayKey] || {};
+
+                    WORKERS.forEach(worker => {
+                        if (dayData[worker] !== undefined) {
+                            monthStats.workers[worker] += dayData[worker];
+                            workerYearlyStats[worker].total += dayData[worker];
+                            workerYearlyStats[worker].days += 1;
+                            monthStats.total += dayData[worker];
+                            yearTotal += dayData[worker];
+                        }
+                    });
+                }
+
+                monthlyData.push(monthStats);
+            }
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text(fixPolishChars('Podsumowanie roczne:'), 14, 42);
+            doc.setFont("helvetica", "normal");
+
+            let yPos = 48;
+            doc.setFontSize(12);
+            doc.text(`Suma produkcji: ${yearTotal.toFixed(0)} kg`, 14, yPos);
+            yPos += 6;
+
+            WORKERS.forEach(worker => {
+                const stats = workerYearlyStats[worker];
+                const avg = stats.days > 0 ? (stats.total / stats.days).toFixed(1) : 0;
+                doc.text(
+                    fixPolishChars(`${worker}: ${stats.total.toFixed(0)} kg | ${stats.days} dni | srednia: ${avg} kg/dzien`),
+                    14,
+                    yPos
+                );
+                yPos += 6;
+            });
+
+            const tableData = monthlyData.map(m => [
+                m.name,
+                m.workers['Kamil'].toFixed(0),
+                m.workers['Igor'].toFixed(0),
+                m.workers['Jarek'].toFixed(0),
+                m.workers['Wowa'].toFixed(0),
+                m.total.toFixed(0)
+            ]);
+
+            doc.autoTable({
+                startY: yPos + 4,
+                head: [['Miesiac', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA']],
+                body: tableData,
+                foot: [[
+                    'RAZEM:',
+                    workerYearlyStats['Kamil'].total.toFixed(0),
+                    workerYearlyStats['Igor'].total.toFixed(0),
+                    workerYearlyStats['Jarek'].total.toFixed(0),
+                    workerYearlyStats['Wowa'].total.toFixed(0),
+                    yearTotal.toFixed(0)
+                ]],
+                theme: 'grid',
+                headStyles: { fillColor: [255, 107, 53] },
+                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' },
+                styles: { fontSize: 9, halign: 'center' },
+                columnStyles: {
+                    0: { halign: 'left', cellWidth: 30 },
+                    1: { cellWidth: 30 },
+                    2: { cellWidth: 30 },
+                    3: { cellWidth: 30 },
+                    4: { cellWidth: 30 },
+                    5: { cellWidth: 30, fontStyle: 'bold' }
+                }
+            });
+
+            doc.save(`Raport_Roczny_${year}.pdf`);
+            showToast('📄 Raport roczny wygenerowany!');
+        }
+
+        // Quarterly Comparison PDF Report
+        function generateQuarterlyComparisonPDF() {
+            document.getElementById('pdfMenu').classList.remove('active');
+
+            const year = currentYear;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFont("helvetica");
+            doc.setLanguage("pl");
+
+            doc.setFontSize(20);
+            doc.text(fixPolishChars(`Porownanie Kwartalow ${year}`), 14, 20);
+
+            doc.setFontSize(11);
+            doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
+            doc.line(14, 32, 196, 32);
+
+            const quarters = [
+                { name: 'Q1', months: [0, 1, 2], label: 'Q1 (Styczen-Marzec)' },
+                { name: 'Q2', months: [3, 4, 5], label: 'Q2 (Kwiecien-Czerwiec)' },
+                { name: 'Q3', months: [6, 7, 8], label: 'Q3 (Lipiec-Wrzesien)' },
+                { name: 'Q4', months: [9, 10, 11], label: 'Q4 (Pazdziernik-Grudzien)' }
+            ];
+
+            const data = getProductionData();
+            const quarterlyStats = [];
+
+            quarters.forEach(quarter => {
+                const qStats = {
+                    name: quarter.name,
+                    label: quarter.label,
+                    workers: {},
+                    total: 0,
+                    days: 0
+                };
+
+                WORKERS.forEach(w => {
+                    qStats.workers[w] = { total: 0, days: 0 };
+                });
+
+                quarter.months.forEach(month => {
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                    for (let day = 1; day <= daysInMonth; day++) {
+                        const dayKey = getDayKey(year, month, day);
+                        const dayData = data[dayKey] || {};
+
+                        let hasDayData = false;
+                        WORKERS.forEach(worker => {
+                            if (dayData[worker] !== undefined) {
+                                qStats.workers[worker].total += dayData[worker];
+                                qStats.workers[worker].days += 1;
+                                qStats.total += dayData[worker];
+                                hasDayData = true;
+                            }
+                        });
+
+                        if (hasDayData) {
+                            qStats.days += 1;
+                        }
+                    }
+                });
+
+                quarterlyStats.push(qStats);
+            });
+
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text(fixPolishChars('Podsumowanie kwartalne:'), 14, 42);
+            doc.setFont("helvetica", "normal");
+
+            let yPos = 48;
+            doc.setFontSize(11);
+
+            quarterlyStats.forEach(q => {
+                const avg = q.days > 0 ? (q.total / q.days).toFixed(1) : 0;
+                doc.text(
+                    fixPolishChars(`${q.label}: ${q.total.toFixed(0)} kg | ${q.days} dni | srednia: ${avg} kg/dzien`),
+                    14,
+                    yPos
+                );
+                yPos += 6;
+            });
+
+            yPos += 4;
+
+            const tableData = quarterlyStats.map(q => [
+                q.name,
+                q.workers['Kamil'].total.toFixed(0),
+                q.workers['Igor'].total.toFixed(0),
+                q.workers['Jarek'].total.toFixed(0),
+                q.workers['Wowa'].total.toFixed(0),
+                q.total.toFixed(0),
+                q.days.toString(),
+                q.days > 0 ? (q.total / q.days).toFixed(1) : '0'
+            ]);
+
+            const totalRow = ['RAZEM', 0, 0, 0, 0, 0, 0, '-'];
+            WORKERS.forEach((worker, idx) => {
+                const workerTotal = quarterlyStats.reduce((sum, q) => sum + q.workers[worker].total, 0);
+                totalRow[idx + 1] = workerTotal.toFixed(0);
+            });
+            totalRow[5] = quarterlyStats.reduce((sum, q) => sum + q.total, 0).toFixed(0);
+            totalRow[6] = quarterlyStats.reduce((sum, q) => sum + q.days, 0).toString();
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Kwartal', 'Kamil', 'Igor', 'Jarek', 'Wowa', 'SUMA', 'Dni', 'Srednia']],
+                body: tableData,
+                foot: [totalRow],
+                theme: 'grid',
+                headStyles: { fillColor: [255, 107, 53] },
+                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' },
+                styles: { fontSize: 9, halign: 'center' },
+                columnStyles: {
+                    0: { halign: 'left', cellWidth: 20 },
+                    1: { cellWidth: 25 },
+                    2: { cellWidth: 25 },
+                    3: { cellWidth: 25 },
+                    4: { cellWidth: 25 },
+                    5: { cellWidth: 25, fontStyle: 'bold' },
+                    6: { cellWidth: 20 },
+                    7: { cellWidth: 25 }
+                }
+            });
+
+            doc.addPage();
+            doc.setFontSize(16);
+            doc.setFont("helvetica", "bold");
+            doc.text(fixPolishChars('Szczegolowa analiza pracownikow'), 14, 20);
+            doc.setFont("helvetica", "normal");
+
+            yPos = 30;
+
+            WORKERS.forEach(worker => {
+                doc.setFontSize(12);
+                doc.setFont("helvetica", "bold");
+                doc.text(fixPolishChars(`${worker}:`), 14, yPos);
+                doc.setFont("helvetica", "normal");
+                yPos += 6;
+
+                doc.setFontSize(10);
+                quarterlyStats.forEach(q => {
+                    const workerStats = q.workers[worker];
+                    const avg = workerStats.days > 0 ? (workerStats.total / workerStats.days).toFixed(1) : 0;
+                    doc.text(
+                        fixPolishChars(`  ${q.name}: ${workerStats.total.toFixed(0)} kg | ${workerStats.days} dni | srednia: ${avg} kg/dzien`),
+                        14,
+                        yPos
+                    );
+                    yPos += 5;
+                });
+
+                yPos += 4;
+
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+            });
+
+            doc.save(`Raport_Kwartaly_${year}.pdf`);
+            showToast('📄 Raport kwartalny wygenerowany!');
         }
 
         // Dashboard KPI rendering
@@ -3544,30 +4198,43 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         function saveProductionOnly() {
             if (!selectedDay) return;
-            
+
             const dayKey = getDayKey(currentYear, currentMonth, selectedDay);
             const data = getProductionData();
-            
+
             if (!data[dayKey]) {
                 data[dayKey] = {};
             }
-            
+
+            let hasInvalidValue = false;
+
             WORKERS.forEach(worker => {
                 const input = document.getElementById(`input-${worker}`);
                 if (input && !input.disabled) {
-                    const value = parseFloat(input.value);
-                    if (!isNaN(value) && value >= 0) {
-                        data[dayKey][worker] = value;
-                    } else if (input.value === '') {
+                    if (input.value !== '') {
+                        const value = validateProductionValue(input.value);
+                        if (value !== null) {
+                            data[dayKey][worker] = value;
+                        } else {
+                            hasInvalidValue = true;
+                            input.focus();
+                            input.select();
+                            return;
+                        }
+                    } else {
                         delete data[dayKey][worker];
                     }
                 }
             });
-            
+
+            if (hasInvalidValue) {
+                return;
+            }
+
             if (Object.keys(data[dayKey]).length === 0) {
                 delete data[dayKey];
             }
-            
+
             setProductionData(data);
             showToast('✅ Produkcja zapisana!');
             closeModal();
@@ -4481,6 +5148,16 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             document.getElementById('yearSelect').value = currentYear;
             renderDashboard();
         };
+
+        // Close PDF dropdown menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.pdf-dropdown');
+            const menu = document.getElementById('pdfMenu');
+
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                menu.classList.remove('active');
+            }
+        });
 
         window.onclick = function(event) {
             const modal = document.getElementById('productionModal');
