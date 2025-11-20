@@ -2250,20 +2250,21 @@
                 headStyles: {
                     fillColor: [255, 107, 53],
                     fontSize: 8,
-                    cellPadding: 2
+                    cellPadding: 2,
+                    halign: 'center'  // OK dla nagłówków
                 },
                 styles: {
                     fontSize: 7,
-                    halign: 'center',
                     cellPadding: 1.5
+                    // USUNIĘTE: halign: 'center' - to powoduje rozciągnięcie!
                 },
                 columnStyles: {
-                    0: { cellWidth: 28, halign: 'left' },
-                    1: { cellWidth: 28 },
-                    2: { cellWidth: 28 },
-                    3: { cellWidth: 28 },
-                    4: { cellWidth: 28 },
-                    5: { cellWidth: 28, fontStyle: 'bold' }
+                    0: { cellWidth: 28, halign: 'left' },      // Data - do lewej
+                    1: { cellWidth: 28, halign: 'right' },     // Kamil - do prawej (liczby)
+                    2: { cellWidth: 28, halign: 'right' },     // Igor - do prawej (liczby)
+                    3: { cellWidth: 28, halign: 'right' },     // Jarek - do prawej (liczby)
+                    4: { cellWidth: 28, halign: 'right' },     // Wowa - do prawej (liczby)
+                    5: { cellWidth: 28, fontStyle: 'bold', halign: 'right' }  // SUMA - do prawej (liczby)
                 },
                 foot: [[
                     'RAZEM:',
@@ -2277,7 +2278,8 @@
                     fillColor: [41, 128, 185],
                     fontStyle: 'bold',
                     fontSize: 8,
-                    cellPadding: 2
+                    cellPadding: 2,
+                    halign: 'right'  // OK dla stopki z liczbami
                 },
                 margin: { top: 10, bottom: 10 }
             });
@@ -2395,16 +2397,26 @@
                     yearTotal.toFixed(0)
                 ]],
                 theme: 'grid',
-                headStyles: { fillColor: [255, 107, 53] },
-                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' },
-                styles: { fontSize: 9, halign: 'center' },
+                headStyles: {
+                    fillColor: [255, 107, 53],
+                    halign: 'center'  // OK dla nagłówków
+                },
+                footStyles: {
+                    fillColor: [41, 128, 185],
+                    fontStyle: 'bold',
+                    halign: 'right'  // Liczby do prawej
+                },
+                styles: {
+                    fontSize: 9
+                    // USUNIĘTE: halign: 'center'
+                },
                 columnStyles: {
-                    0: { halign: 'left', cellWidth: 30 },
-                    1: { cellWidth: 30 },
-                    2: { cellWidth: 30 },
-                    3: { cellWidth: 30 },
-                    4: { cellWidth: 30 },
-                    5: { cellWidth: 30, fontStyle: 'bold' }
+                    0: { halign: 'left', cellWidth: 30 },      // Miesiąc - do lewej
+                    1: { cellWidth: 30, halign: 'right' },     // Kamil - do prawej
+                    2: { cellWidth: 30, halign: 'right' },     // Igor - do prawej
+                    3: { cellWidth: 30, halign: 'right' },     // Jarek - do prawej
+                    4: { cellWidth: 30, halign: 'right' },     // Wowa - do prawej
+                    5: { cellWidth: 30, fontStyle: 'bold', halign: 'right' }  // SUMA - do prawej
                 }
             });
 
@@ -2524,18 +2536,28 @@
                 body: tableData,
                 foot: [totalRow],
                 theme: 'grid',
-                headStyles: { fillColor: [255, 107, 53] },
-                footStyles: { fillColor: [41, 128, 185], fontStyle: 'bold' },
-                styles: { fontSize: 9, halign: 'center' },
+                headStyles: {
+                    fillColor: [255, 107, 53],
+                    halign: 'center'  // OK dla nagłówków
+                },
+                footStyles: {
+                    fillColor: [41, 128, 185],
+                    fontStyle: 'bold',
+                    halign: 'right'  // Liczby do prawej
+                },
+                styles: {
+                    fontSize: 9
+                    // USUNIĘTE: halign: 'center'
+                },
                 columnStyles: {
-                    0: { halign: 'left', cellWidth: 20 },
-                    1: { cellWidth: 25 },
-                    2: { cellWidth: 25 },
-                    3: { cellWidth: 25 },
-                    4: { cellWidth: 25 },
-                    5: { cellWidth: 25, fontStyle: 'bold' },
-                    6: { cellWidth: 20 },
-                    7: { cellWidth: 25 }
+                    0: { halign: 'left', cellWidth: 20 },          // Kwartał - do lewej
+                    1: { cellWidth: 25, halign: 'right' },         // Kamil - do prawej
+                    2: { cellWidth: 25, halign: 'right' },         // Igor - do prawej
+                    3: { cellWidth: 25, halign: 'right' },         // Jarek - do prawej
+                    4: { cellWidth: 25, halign: 'right' },         // Wowa - do prawej
+                    5: { cellWidth: 25, fontStyle: 'bold', halign: 'right' },  // SUMA - do prawej
+                    6: { cellWidth: 20, halign: 'right' },         // Dni - do prawej
+                    7: { cellWidth: 25, halign: 'right' }          // Średnia - do prawej
                 }
             });
 
