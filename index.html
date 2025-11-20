@@ -1397,6 +1397,27 @@
             isFirebaseInitialized = false;
         }
 
+        // Check Firebase Connection Status
+        function checkFirebaseConnection() {
+            if (!isFirebaseInitialized) {
+                updateSyncStatus('error', 'Tryb offline - brak Firebase');
+                return;
+            }
+
+            // Test connection - attempt to read from database
+            const connectedRef = database.ref('.info/connected');
+
+            connectedRef.on('value', (snapshot) => {
+                if (snapshot.val() === true) {
+                    // Actually connected
+                    updateSyncStatus('synced', 'Połączono z Firebase');
+                } else {
+                    // No connection (firewall or offline)
+                    updateSyncStatus('error', 'Brak połączenia - tryb offline');
+                }
+            });
+        }
+
         // Constants and initial setup
         const CYCLE_START_DATES = {
             'Kamil': new Date('2025-01-04'),
@@ -1426,27 +1447,6 @@
         let distributionChart = null;
         let editMode = false;
         let currentView = 'dashboard';
-
-        // Cloud sync simulation
-        let syncInterval = null;
-
-        function initCloudSync() {
-            // Simulate cloud sync - w produkcji tutaj byłaby integracja z Firebase/Supabase
-            syncInterval = setInterval(() => {
-                const syncStatus = document.getElementById('syncStatus');
-                const syncText = document.getElementById('syncText');
-                
-                syncStatus.className = 'sync-status syncing';
-                syncStatus.querySelector('.sync-dot').className = 'sync-dot syncing';
-                syncText.textContent = 'Synchronizuję...';
-                
-                setTimeout(() => {
-                    syncStatus.className = 'sync-status synced';
-                    syncStatus.querySelector('.sync-dot').className = 'sync-dot synced';
-                    syncText.textContent = 'Zsynchronizowano ' + new Date().toLocaleTimeString();
-                }, 1000);
-            }, 60000); // Co minutę
-        }
 
         function getCustomSchedule(dayKey) {
             const customSchedules = JSON.parse(localStorage.getItem('customSchedules') || '{}');
@@ -1518,15 +1518,21 @@
 
         // Firebase Sync Functions
         function syncToFirebase(key, data) {
-            if (!isFirebaseInitialized) return;
-            
-            try {
-                database.ref(key).set(data);
-                updateSyncStatus('synced', 'Zsynchronizowano');
-            } catch (error) {
-                console.error('Firebase sync error:', error);
-                updateSyncStatus('error', 'Błąd synchronizacji');
+            if (!isFirebaseInitialized) {
+                updateSyncStatus('error', 'Tryb offline');
+                return;
             }
+
+            updateSyncStatus('syncing', 'Synchronizuję...');
+
+            database.ref(key).set(data)
+                .then(() => {
+                    updateSyncStatus('synced', 'Zsynchronizowano');
+                })
+                .catch((error) => {
+                    console.error('Firebase sync error:', error);
+                    updateSyncStatus('error', 'Błąd - tryb offline');
+                });
         }
 
         function loadFromFirebase() {
@@ -1681,51 +1687,88 @@
 
         // Function to open month selection dialog
         function openMonthSelectionForPDF() {
+            // Get list of months with data
             const data = getProductionData();
-            const availableMonths = new Set();
+            const availableMonths = [];
 
-            // Find all months with production data
             Object.keys(data).forEach(dayKey => {
-                const dayData = data[dayKey];
-                // Check if there's any production data for this day
-                const hasData = WORKERS.some(worker => dayData[worker] && dayData[worker] > 0);
-                if (hasData) {
-                    // Extract year-month from dayKey (format: YYYY-MM-DD)
-                    const [year, month] = dayKey.split('-');
-                    availableMonths.add(`${year}-${month}`);
+                const [year, month, day] = dayKey.split('-').map(Number);
+                const monthKey = `${year}-${month}`;
+                if (!availableMonths.some(m => m.key === monthKey)) {
+                    const hasData = WORKERS.some(worker => data[dayKey][worker] && data[dayKey][worker] > 0);
+                    if (hasData) {
+                        availableMonths.push({
+                            key: monthKey,
+                            year: year,
+                            month: month - 1, // 0-indexed
+                            display: `${MONTHS[month - 1]} ${year}`
+                        });
+                    }
                 }
             });
 
-            if (availableMonths.size === 0) {
-                alert('Brak danych produkcyjnych do wygenerowania raportu!');
+            // Sort from newest
+            availableMonths.sort((a, b) => {
+                if (a.year !== b.year) return b.year - a.year;
+                return b.month - a.month;
+            });
+
+            if (availableMonths.length === 0) {
+                alert('Brak danych produkcyjnych do wygenerowania raportu.');
                 return;
             }
 
-            // Sort months (newest first)
-            const sortedMonths = Array.from(availableMonths).sort().reverse();
+            // Show modal with selection
+            showMonthSelectionModal(availableMonths);
+        }
 
-            // Create selection dialog
-            let message = 'Wybierz miesiąc do raportu:\n\n';
-            const monthOptions = sortedMonths.map((yearMonth, index) => {
-                const [year, month] = yearMonth.split('-');
-                const monthName = MONTHS[parseInt(month) - 1];
-                return `${index + 1}. ${monthName} ${year}`;
-            });
+        function showMonthSelectionModal(availableMonths) {
+            const modalHtml = `
+                <div class="modal-header">📄 Wybierz miesiąc do raportu PDF</div>
+                <div style="margin: 2rem 0;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
+                        Miesiąc:
+                    </label>
+                    <select id="monthSelector" style="width: 100%; padding: 0.75rem; font-size: 1rem;
+                           background: var(--bg-tertiary); border: 2px solid var(--border);
+                           border-radius: 5px; color: var(--text-primary);">
+                        ${availableMonths.map(m =>
+                            `<option value="${m.year}-${m.month}">${m.display}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                <div class="button-group">
+                    <button class="btn" onclick="generateSelectedMonthPDF()">
+                        📄 Generuj PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeModal()">
+                        ❌ Anuluj
+                    </button>
+                </div>
+            `;
 
-            message += monthOptions.join('\n');
-            message += '\n\nWpisz numer miesiąca:';
+            document.getElementById('modalBody').innerHTML = modalHtml;
+            document.getElementById('modalTitle').innerHTML = '';
+            document.getElementById('modalButtons').innerHTML = '';
+            document.getElementById('productionModal').classList.add('active');
+        }
 
-            const selection = prompt(message);
+        function generateSelectedMonthPDF() {
+            const selector = document.getElementById('monthSelector');
+            const [year, month] = selector.value.split('-').map(Number);
+            closeModal();
+            generateMonthPDF(year, month);
+        }
 
-            if (selection === null) return; // User cancelled
-
-            const selectedIndex = parseInt(selection) - 1;
-            if (selectedIndex >= 0 && selectedIndex < sortedMonths.length) {
-                const [year, month] = sortedMonths[selectedIndex].split('-');
-                generateMonthPDF(parseInt(year), parseInt(month) - 1);
-            } else {
-                alert('Nieprawidłowy wybór!');
-            }
+        // Helper function to fix Polish characters for PDF
+        function fixPolishChars(text) {
+            const map = {
+                'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l',
+                'ń': 'n', 'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+                'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L',
+                'Ń': 'N', 'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+            };
+            return text.replace(/[ąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, char => map[char] || char);
         }
 
         // Function to generate PDF for selected month
@@ -1736,9 +1779,13 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
+            // Set font for better Polish character support
+            doc.setFont("helvetica");
+            doc.setLanguage("pl");
+
             // Header
             doc.setFontSize(18);
-            doc.text(`Raport Produkcji: ${monthName} ${year}`, 14, 20);
+            doc.text(fixPolishChars(`Raport Produkcji: ${monthName} ${year}`), 14, 20);
 
             doc.setFontSize(11);
             doc.text(`Data generowania: ${new Date().toLocaleDateString('pl-PL')}`, 14, 28);
@@ -1810,26 +1857,20 @@
                 return;
             }
 
-            // Calculate total working days (across all workers)
-            const totalWorkingDays = WORKERS.reduce((sum, w) => sum + workerStats[w].workingDays, 0);
-            const avgDailyAllWorkers = totalWorkingDays > 0 ? (totalProduction / totalWorkingDays).toFixed(0) : 0;
-
             // Summary section (before table)
             doc.setDrawColor(200);
             doc.line(14, 32, 196, 32); // Horizontal line
 
             doc.setFontSize(12);
             doc.text(`Suma produkcji: ${totalProduction} kg`, 14, 40);
-            doc.text(`Srednia dzienna (wszystkie zmiany): ${avgDailyAllWorkers} kg`, 14, 46);
-            doc.text(`Liczba zmian roboczych: ${totalWorkingDays}`, 14, 52);
 
             // Summary per worker
-            let yPos = 58;
+            let yPos = 46;
             WORKERS.forEach(worker => {
                 const stats = workerStats[worker];
                 const avg = stats.workingDays > 0 ? (stats.total / stats.workingDays).toFixed(0) : 0;
                 doc.text(
-                    `${worker}: ${stats.total} kg | ${stats.workingDays} dni roboczych | srednia: ${avg} kg/dzien`,
+                    fixPolishChars(`${worker}: ${stats.total} kg | ${stats.workingDays} dni roboczych | srednia: ${avg} kg/dzien`),
                     14,
                     yPos
                 );
@@ -4422,14 +4463,14 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         window.onload = function() {
             initData();
-            
-            // Load data from Firebase
+
+            // Check Firebase connection and load data
             if (isFirebaseInitialized) {
+                checkFirebaseConnection();
                 loadFromFirebase();
                 setupFirebaseListeners();
-                updateSyncStatus('synced', 'Połączono');
             } else {
-                updateSyncStatus('error', 'Tryb offline');
+                updateSyncStatus('error', 'Tryb offline - brak Firebase');
             }
             
             const savedTheme = localStorage.getItem('theme');
