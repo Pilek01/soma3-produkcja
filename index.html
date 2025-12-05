@@ -1225,12 +1225,6 @@
             border-bottom: 1px solid var(--border);
         }
 
-        /* Quick Entry */
-        .quick-entry-container {
-            display: flex;
-            align-items: center;
-        }
-
         #modalBody input[type="number"] {
             transition: all 0.3s;
         }
@@ -1244,7 +1238,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.1.9</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.2.0</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
@@ -1278,6 +1272,15 @@
 
         <!-- Dashboard View -->
         <div id="dashboardView">
+            <!-- Dashboard Month Selector -->
+            <div class="month-selector" style="margin-bottom: 1.5rem;">
+                <div class="month-nav">
+                    <button onclick="changeDashboardMonth(-1)">◀</button>
+                    <div class="month-display" id="dashboardMonthDisplay"></div>
+                    <button onclick="changeDashboardMonth(1)">▶</button>
+                </div>
+            </div>
+
             <!-- Monthly Goal Progress Bar -->
             <div class="progress-bar-container" style="margin-bottom: 2rem;">
                 <div class="progress-bar-title" style="display: flex; justify-content: space-between; align-items: center;">
@@ -1316,7 +1319,7 @@
             </div>
 
             <div class="summary-section">
-                <div class="summary-title">🏆 Top Performers - Bieżący miesiąc</div>
+                <div class="summary-title" id="dashboardPodiumTitle">🏆 Top Performers</div>
                 <div class="podium-section" id="dashboardPodium"></div>
             </div>
         </div>
@@ -1335,11 +1338,6 @@
                         <option value="2025" selected>2025</option>
                         <option value="2026">2026</option>
                     </select>
-                </div>
-                <div class="quick-entry-container">
-                    <button class="btn" onclick="openQuickEntry()" style="display: flex; align-items: center; gap: 0.5rem;">
-                        ⚡ Szybkie wprowadzanie
-                    </button>
                 </div>
             </div>
 
@@ -1936,6 +1934,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
+        let dashboardMonth = new Date().getMonth();
+        let dashboardYear = new Date().getFullYear();
         let selectedDay = null;
         let comparisonChart = null;
         let trendChart = null;
@@ -2203,258 +2203,6 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             }
 
             return parsed;
-        }
-
-        // Quick Entry Functions
-        function openQuickEntry() {
-            const today = new Date();
-            let quickEntryDay = today.getDate();
-            let quickEntryMonth = today.getMonth();
-            let quickEntryYear = today.getFullYear();
-
-            if (currentMonth !== quickEntryMonth || currentYear !== quickEntryYear) {
-                currentMonth = quickEntryMonth;
-                currentYear = quickEntryYear;
-                renderCalendar();
-            }
-
-            renderQuickEntryModal(quickEntryDay, quickEntryMonth, quickEntryYear);
-        }
-
-        function renderQuickEntryModal(day, month, year) {
-            const date = new Date(year, month, day);
-            const dayKey = getDayKey(year, month, day);
-            const data = getProductionData();
-            const dayData = data[dayKey] || {};
-            const isHoliday = isDayHoliday(dayKey);
-
-            const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
-            const dayName = dayNames[date.getDay()];
-            const dateString = `${day} ${MONTHS[month]} ${year} (${dayName})`;
-
-            const modalTitle = `
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 1rem;">
-                    <button class="btn btn-secondary" onclick="quickEntryNavigate(-1)" style="padding: 0.5rem 1rem;">
-                        ◀ Poprzedni
-                    </button>
-                    <span style="flex: 1; text-align: center;">⚡ Szybkie wprowadzanie<br>
-                    <span style="font-size: 1rem; color: var(--text-secondary);">${dateString}</span></span>
-                    <button class="btn btn-secondary" onclick="quickEntryNavigate(1)" style="padding: 0.5rem 1rem;">
-                        Następny ▶
-                    </button>
-                </div>
-            `;
-            document.getElementById('modalTitle').innerHTML = modalTitle;
-
-            let html = '';
-
-            if (isHoliday) {
-                html += `
-                    <div style="text-align: center; padding: 2rem; background: rgba(244, 67, 54, 0.1); border-radius: 8px; margin-bottom: 1rem;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎄</div>
-                        <div style="font-size: 1.2rem; font-weight: 700; color: var(--danger);">Dzień wolny od pracy</div>
-                        <div style="color: var(--text-secondary); margin-top: 0.5rem;">Ten dzień jest oznaczony jako święto</div>
-                    </div>
-                `;
-            } else {
-                const workingWorkers = [];
-                WORKERS.forEach(worker => {
-                    const shift = getShiftForDay(worker, date);
-                    if (shift !== 0) {
-                        workingWorkers.push({
-                            name: worker,
-                            shift: shift,
-                            value: dayData[worker] !== undefined ? dayData[worker] : ''
-                        });
-                    }
-                });
-
-                if (workingWorkers.length === 0) {
-                    html += `
-                        <div style="text-align: center; padding: 2rem; background: var(--bg-tertiary); border-radius: 8px;">
-                            <div style="font-size: 2rem; margin-bottom: 1rem;">💤</div>
-                            <div style="font-size: 1.1rem; color: var(--text-secondary);">Wszyscy pracownicy mają wolne tego dnia</div>
-                        </div>
-                    `;
-                } else {
-                    html += `
-                        <div style="margin-bottom: 1.5rem; padding: 1rem; background: rgba(76, 175, 80, 0.1); border-radius: 8px; border-left: 4px solid var(--success);">
-                            <div style="font-weight: 600; margin-bottom: 0.5rem;">ℹ️ Wskazówki:</div>
-                            <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                                • Enter = przejdź do następnego pola<br>
-                                • Shift+Enter = zapisz i zamknij<br>
-                                • Escape = zamknij bez zapisywania
-                            </div>
-                        </div>
-                    `;
-
-                    workingWorkers.forEach((worker, index) => {
-                        const shiftText = worker.shift === 1 ? '☀️ Rano' :
-                                         worker.shift === 2 ? '🌆 Popołudnie' : '🌙 Noc';
-
-                        html += `
-                            <div class="form-group">
-                                <label style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
-                                    <div class="worker-label ${worker.name.toLowerCase()}-label" style="flex: 0 0 120px;">
-                                        ${worker.name}
-                                    </div>
-                                    <div class="shift-indicator" style="flex: 1;">
-                                        ${shiftText}
-                                    </div>
-                                </label>
-                                <input type="number"
-                                       id="quick-input-${worker.name}"
-                                       value="${worker.value}"
-                                       placeholder="Wpisz kg (np. 2500)"
-                                       min="0"
-                                       step="0.1"
-                                       onkeydown="handleQuickEntryKeydown(event, ${index}, ${workingWorkers.length})"
-                                       style="font-size: 1.1rem; padding: 1rem;">
-                            </div>
-                        `;
-                    });
-                }
-            }
-
-            document.getElementById('modalBody').innerHTML = html;
-
-            const buttonsHtml = `
-                <button class="btn" onclick="saveQuickEntry(${day}, ${month}, ${year})">
-                    💾 Zapisz i zamknij
-                </button>
-                <button class="btn btn-secondary" onclick="closeModal()">
-                    ❌ Anuluj
-                </button>
-            `;
-            document.getElementById('modalButtons').innerHTML = buttonsHtml;
-
-            document.getElementById('productionModal').classList.add('active');
-
-            setTimeout(() => {
-                const firstInput = document.querySelector('#modalBody input:not([disabled])');
-                if (firstInput) firstInput.focus();
-            }, 100);
-        }
-
-        function handleQuickEntryKeydown(event, currentIndex, totalInputs) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-
-                if (event.shiftKey) {
-                    const titleText = document.querySelector('#modalTitle span').textContent;
-                    const day = parseInt(titleText.match(/(\d+)/)[0]);
-                    const monthText = titleText.match(/\d+ (\w+)/)[1];
-                    const month = MONTHS.indexOf(monthText);
-                    const year = parseInt(titleText.match(/(\d{4})/)[0]);
-                    saveQuickEntry(day, month, year);
-                } else {
-                    const inputs = Array.from(document.querySelectorAll('#modalBody input:not([disabled])'));
-                    if (currentIndex < totalInputs - 1) {
-                        inputs[currentIndex + 1].focus();
-                    } else {
-                        const titleText = document.querySelector('#modalTitle span').textContent;
-                        const day = parseInt(titleText.match(/(\d+)/)[0]);
-                        const monthText = titleText.match(/\d+ (\w+)/)[1];
-                        const month = MONTHS.indexOf(monthText);
-                        const year = parseInt(titleText.match(/(\d{4})/)[0]);
-                        saveQuickEntryAndNext(day, month, year);
-                    }
-                }
-            } else if (event.key === 'Escape') {
-                event.preventDefault();
-                closeModal();
-            }
-        }
-
-        function quickEntryNavigate(delta) {
-            const titleText = document.querySelector('#modalTitle span').textContent;
-            const day = parseInt(titleText.match(/(\d+)/)[0]);
-            const monthText = titleText.match(/\d+ (\w+)/)[1];
-            const month = MONTHS.indexOf(monthText);
-            const year = parseInt(titleText.match(/(\d{4})/)[0]);
-
-            const date = new Date(year, month, day);
-            date.setDate(date.getDate() + delta);
-
-            const newDay = date.getDate();
-            const newMonth = date.getMonth();
-            const newYear = date.getFullYear();
-
-            if (newMonth !== currentMonth || newYear !== currentYear) {
-                currentMonth = newMonth;
-                currentYear = newYear;
-                renderCalendar();
-            }
-
-            renderQuickEntryModal(newDay, newMonth, newYear);
-        }
-
-        function saveQuickEntry(day, month, year) {
-            const dayKey = getDayKey(year, month, day);
-            const data = getProductionData();
-
-            if (!data[dayKey]) {
-                data[dayKey] = {};
-            }
-
-            let hasChanges = false;
-            let hasInvalidValue = false;
-
-            WORKERS.forEach(worker => {
-                const input = document.getElementById(`quick-input-${worker}`);
-                if (input && input.value !== '') {
-                    const value = validateProductionValue(input.value);
-                    if (value !== null) {
-                        data[dayKey][worker] = value;
-                        hasChanges = true;
-                    } else {
-                        hasInvalidValue = true;
-                        input.focus();
-                        input.select();
-                        return;
-                    }
-                } else if (input && input.value === '') {
-                    delete data[dayKey][worker];
-                }
-            });
-
-            if (hasInvalidValue) {
-                return;
-            }
-
-            if (Object.keys(data[dayKey]).length === 0) {
-                delete data[dayKey];
-            }
-
-            if (hasChanges) {
-                setProductionData(data);
-                showToast('✅ Dane zapisane!');
-            }
-
-            closeModal();
-            renderCalendar();
-            renderDashboard();
-        }
-
-        function saveQuickEntryAndNext(day, month, year) {
-            saveQuickEntry(day, month, year);
-
-            setTimeout(() => {
-                const date = new Date(year, month, day);
-                date.setDate(date.getDate() + 1);
-
-                const newDay = date.getDate();
-                const newMonth = date.getMonth();
-                const newYear = date.getFullYear();
-
-                if (newMonth !== currentMonth || newYear !== currentYear) {
-                    currentMonth = newMonth;
-                    currentYear = newYear;
-                    renderCalendar();
-                }
-
-                renderQuickEntryModal(newDay, newMonth, newYear);
-            }, 300);
         }
 
         // PDF Export Functions
@@ -3060,9 +2808,9 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const today = new Date();
     const thisMonth = today.getMonth();
     const thisYear = today.getFullYear();
-    
+
     // Sprawdź czy to bieżący miesiąc
-    if (currentYear !== thisYear || currentMonth !== thisMonth) {
+    if (dashboardYear !== thisYear || dashboardMonth !== thisMonth) {
         document.querySelector('.progress-bar-container').style.display = 'none';
         return;
     }
@@ -3074,25 +2822,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     const current = currentStats.total || 0;
     const percentage = goal > 0 ? (current / goal) * 100 : 0;
     
-    const currentDay = today.getDate();
-    const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-    
-    // Oblicz ile dni roboczych pozostało
-    const data = getProductionData();
-    let workingDaysRemaining = 0;
-    for (let day = currentDay + 1; day <= daysInMonth; day++) {
-        const date = new Date(thisYear, thisMonth, day);
-        const dayKey = getDayKey(thisYear, thisMonth, day);
-        
-        if (isDayHoliday(dayKey)) continue;
-        
-        let hasWorkingPeople = false;
-        WORKERS.forEach(worker => {
-            const shift = getShiftForDay(worker, date);
-            if (shift !== 0) hasWorkingPeople = true;
-        });
-        if (hasWorkingPeople) workingDaysRemaining += 1;
-    }
+    // POPRAWIONA LOGIKA: Oblicz ile dni roboczych pozostało
+    // pozostałe = wszystkie_dni_robocze_w_miesiącu - pełne_dni_z_danymi
+    const totalWorkDays = getTotalWorkDaysInMonth(thisYear, thisMonth);
+    const workingDaysRemaining = totalWorkDays - currentStats.completeDays;
     
     const remaining = goal - current;
     const neededPerDay = workingDaysRemaining > 0 ? remaining / workingDaysRemaining : 0;
@@ -3293,26 +3026,59 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
 
 
-        
+
         function renderDashboard() {
+            updateDashboardMonthDisplay();
             renderMonthlyGoalProgress();
             renderKPIDashboard();
             renderDashboardCharts();
             renderDashboardPodium();
         }
 
+        function changeDashboardMonth(delta) {
+            dashboardMonth += delta;
+            if (dashboardMonth < 0) {
+                dashboardMonth = 11;
+                dashboardYear--;
+            } else if (dashboardMonth > 11) {
+                dashboardMonth = 0;
+                dashboardYear++;
+            }
+
+            // Nie pozwól wybrać przyszłych miesięcy
+            const now = new Date();
+            if (dashboardYear > now.getFullYear() ||
+                (dashboardYear === now.getFullYear() && dashboardMonth > now.getMonth())) {
+                dashboardMonth = now.getMonth();
+                dashboardYear = now.getFullYear();
+            }
+
+            renderDashboard();
+        }
+
+        function updateDashboardMonthDisplay() {
+            const displayElement = document.getElementById('dashboardMonthDisplay');
+            if (displayElement) {
+                const today = new Date();
+                const isCurrentMonth = (dashboardYear === today.getFullYear() && dashboardMonth === today.getMonth());
+                const monthLabel = isCurrentMonth ?
+                    `${MONTHS[dashboardMonth]} ${dashboardYear} (Bieżący)` :
+                    `${MONTHS[dashboardMonth]} ${dashboardYear}`;
+                displayElement.textContent = monthLabel;
+            }
+        }
+
         function renderKPIDashboard() {
     const data = getProductionData();
     const today = new Date();
-    const thisMonth = today.getMonth();
-    const thisYear = today.getFullYear();
-    
-    // Statystyki dla bieżącego miesiąca (tylko pełne dni)
-    const currentStats = getMonthStatsComplete(thisYear, thisMonth);
+    const isCurrentMonth = (dashboardYear === today.getFullYear() && dashboardMonth === today.getMonth());
+
+    // Statystyki dla wybranego miesiąca (tylko pełne dni)
+    const currentStats = getMonthStatsComplete(dashboardYear, dashboardMonth);
     
     // Statystyki dla poprzedniego miesiąca
-    const prevMonth = thisMonth === 0 ? 11 : thisMonth - 1;
-    const prevYear = thisMonth === 0 ? thisYear - 1 : thisYear;
+    const prevMonth = dashboardMonth === 0 ? 11 : dashboardMonth - 1;
+    const prevYear = dashboardMonth === 0 ? dashboardYear - 1 : dashboardYear;
 
     // Dla produkcji: porównanie do tej samej liczby dni
     const prevStatsLimited = getMonthStatsComplete(prevYear, prevMonth, currentStats.completeDays);
@@ -3390,46 +3156,52 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             return { percent, diff };
         }
 
-        function getMonthForecastComplete(stats) {
-    const today = new Date();
-    const thisMonth = today.getMonth();
-    const thisYear = today.getFullYear();
-    
-    // Sprawdź czy to bieżący miesiąc
-    if (currentYear !== thisYear || currentMonth !== thisMonth) {
-        return 'Tylko dla bieżącego miesiąca';
-    }
-    
-    const completeDays = stats.completeDays || 0;
-    const totalSoFar = stats.total || 0;
-    
-    // Logika prognozy w zależności od liczby pełnych dni
-    if (completeDays < 3) {
-        return 'Za mało danych (min. 3 pełne dni)';
-    }
-    
-    const avgPerDay = completeDays > 0 ? totalSoFar / completeDays : 0;
-    
-    // Policz pozostałe dni robocze
-    const data = getProductionData();
-    const currentDay = today.getDate();
-    const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-    
-    let estimatedRemainingDays = 0;
-    for (let day = currentDay + 1; day <= daysInMonth; day++) {
-        const date = new Date(thisYear, thisMonth, day);
-        const dayKey = getDayKey(thisYear, thisMonth, day);
-        
+        function getTotalWorkDaysInMonth(year, month) {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    let workDays = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dayKey = getDayKey(year, month, day);
+
         if (isDayHoliday(dayKey)) continue;
-        
+
         let hasWorkingPeople = false;
         WORKERS.forEach(worker => {
             const shift = getShiftForDay(worker, date);
             if (shift !== 0) hasWorkingPeople = true;
         });
-        if (hasWorkingPeople) estimatedRemainingDays += 1;
+        if (hasWorkingPeople) workDays += 1;
     }
-    
+
+    return workDays;
+}
+
+        function getMonthForecastComplete(stats) {
+    const today = new Date();
+    const thisMonth = today.getMonth();
+    const thisYear = today.getFullYear();
+
+    // Sprawdź czy to bieżący miesiąc
+    if (dashboardYear !== thisYear || dashboardMonth !== thisMonth) {
+        return 'Miesiąc zakończony';
+    }
+
+    const completeDays = stats.completeDays || 0;
+    const totalSoFar = stats.total || 0;
+
+    // Logika prognozy w zależności od liczby pełnych dni
+    if (completeDays < 3) {
+        return 'Za mało danych (min. 3 pełne dni)';
+    }
+
+    const avgPerDay = completeDays > 0 ? totalSoFar / completeDays : 0;
+
+    // POPRAWIONA LOGIKA: Policz pozostałe dni robocze
+    // pozostałe = wszystkie_dni_robocze_w_miesiącu - pełne_dni_z_danymi
+    const totalWorkDays = getTotalWorkDaysInMonth(thisYear, thisMonth);
+    const estimatedRemainingDays = totalWorkDays - completeDays;
+
     const forecastTotal = totalSoFar + (avgPerDay * estimatedRemainingDays);
     
     // Dodaj etykietę w zależności od liczby pełnych dni
@@ -3452,48 +3224,118 @@ function getMonthStatsComplete(year, month, maxDays = null) {
     }
     
     // Trend ostatnich 3 miesięcy - używamy pełnych dni
-    const today = new Date();
     const months = [];
     const totals = [];
-    
+    const forecasts = [];
+    const today = new Date();
+
     for (let i = 2; i >= 0; i--) {
-        const month = today.getMonth() - i;
-        const year = month < 0 ? today.getFullYear() - 1 : today.getFullYear();
+        const month = dashboardMonth - i;
+        const year = month < 0 ? dashboardYear - 1 : dashboardYear;
         const adjustedMonth = month < 0 ? 12 + month : month;
-        
+
         const stats = getMonthStatsComplete(year, adjustedMonth);
         months.push(MONTHS[adjustedMonth]);
         totals.push(stats.total || 0);
+
+        // Dodaj prognozę tylko dla aktualnego miesiąca
+        const isCurrentMonth = (year === today.getFullYear() && adjustedMonth === today.getMonth());
+        if (isCurrentMonth && stats.completeDays >= 3) {
+            // POPRAWIONA LOGIKA: Oblicz prognozę używając pełnych dni
+            const avgPerDay = stats.total / stats.completeDays;
+            const totalWorkDays = getTotalWorkDaysInMonth(year, adjustedMonth);
+            const estimatedRemainingDays = totalWorkDays - stats.completeDays;
+
+            const forecastTotal = stats.total + (avgPerDay * estimatedRemainingDays);
+            forecasts.push(forecastTotal);
+        } else {
+            forecasts.push(null);
+        }
     }
-    
+
+    // Przygotuj datasets
+    const datasets = [{
+        label: 'Produkcja (kg)',
+        data: totals,
+        borderColor: 'rgb(255, 107, 53)',
+        backgroundColor: 'rgba(255, 107, 53, 0.1)',
+        borderWidth: 3,
+        tension: 0.4,
+        fill: true,
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointBackgroundColor: 'rgb(255, 107, 53)'
+    }];
+
+    // Dodaj dataset z prognozą jeśli jest dostępna
+    const hasForecast = forecasts.some(f => f !== null);
+    if (hasForecast) {
+        // POPRAWIONA LOGIKA: Przerywana linia od poprzedniego miesiąca do prognozy
+        // Wykres pokazuje 3 miesiące: [0]=Paź, [1]=Lis, [2]=Gru(prognoza)
+        const forecastIndex = forecasts.findIndex(f => f !== null);
+
+        if (forecastIndex !== -1) {
+            const forecastData = [];
+
+            // Wypełnij null dla wszystkich punktów przed prognozą
+            for (let i = 0; i < forecastIndex; i++) {
+                forecastData.push(null);
+            }
+
+            // Jeśli prognoza nie jest pierwszym miesiącem, dodaj punkt startowy (poprzedni miesiąc)
+            if (forecastIndex > 0) {
+                forecastData[forecastIndex - 1] = totals[forecastIndex - 1]; // Listopad
+            }
+
+            // Dodaj punkt końcowy (prognoza)
+            forecastData[forecastIndex] = forecasts[forecastIndex]; // Grudzień (prognoza)
+
+            datasets.push({
+                label: 'Prognoza (kg)',
+                data: forecastData,
+                borderColor: 'rgb(255, 193, 7)',
+                backgroundColor: 'transparent',
+                borderWidth: 3,
+                borderDash: [10, 5],
+                tension: 0,
+                fill: false,
+                pointRadius: (context) => {
+                    // Ukryj kropkę na punkcie startowym (poprzedni miesiąc)
+                    // Pokaż kropkę tylko na punkcie końcowym (prognoza)
+                    const index = context.dataIndex;
+                    return (index === forecastIndex) ? 6 : 0;
+                },
+                pointHoverRadius: 8,
+                pointBackgroundColor: 'rgb(255, 193, 7)',
+                pointBorderColor: 'rgb(255, 193, 7)'
+            });
+        }
+    }
+
     dashboardTrendChart = new Chart(ctx1, {
         type: 'line',
         data: {
             labels: months,
-            datasets: [{
-                label: 'Produkcja (kg)',
-                data: totals,
-                borderColor: 'rgb(255, 107, 53)',
-                backgroundColor: 'rgba(255, 107, 53, 0.1)',
-                borderWidth: 3,
-                tension: 0.4,
-                fill: true,
-                pointRadius: 6,
-                pointHoverRadius: 8,
-                pointBackgroundColor: 'rgb(255, 107, 53)'
-            }]
+            datasets: datasets
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: hasForecast,
+                    labels: {
+                        color: '#b0b0b0',
+                        font: { size: 12 }
+                    }
+                },
                 tooltip: {
                     backgroundColor: 'rgba(0,0,0,0.8)',
                     padding: 12,
                     callbacks: {
                         label: function(context) {
-                            return context.parsed.y.toFixed(0) + ' kg';
+                            const label = context.dataset.label || '';
+                            return label + ': ' + context.parsed.y.toFixed(0) + ' kg';
                         }
                     }
                 }
@@ -3525,7 +3367,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
         dashboardPerformanceChart.destroy();
     }
     
-    const currentStats = getMonthStatsComplete(today.getFullYear(), today.getMonth());
+    const currentStats = getMonthStatsComplete(dashboardYear, dashboardMonth);
     const workerAvgs = WORKERS.map(w => {
         const stats = currentStats.workers[w];
         return stats && stats.days >= 3 ? parseFloat(stats.avg) : 0;
@@ -3593,9 +3435,19 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         function renderDashboardPodium() {
     const today = new Date();
-    const currentStats = getMonthStatsComplete(today.getFullYear(), today.getMonth());
-    const prevMonth = today.getMonth() === 0 ? 11 : today.getMonth() - 1;
-    const prevYear = today.getMonth() === 0 ? today.getFullYear() - 1 : today.getFullYear();
+    const isCurrentMonth = (dashboardYear === today.getFullYear() && dashboardMonth === today.getMonth());
+
+    // Zaktualizuj tytuł
+    const titleElement = document.getElementById('dashboardPodiumTitle');
+    if (titleElement) {
+        titleElement.textContent = isCurrentMonth ?
+            '🏆 Top Performers - Bieżący miesiąc' :
+            `🏆 Top Performers - ${MONTHS[dashboardMonth]} ${dashboardYear}`;
+    }
+
+    const currentStats = getMonthStatsComplete(dashboardYear, dashboardMonth);
+    const prevMonth = dashboardMonth === 0 ? 11 : dashboardMonth - 1;
+    const prevYear = dashboardMonth === 0 ? dashboardYear - 1 : dashboardYear;
     const prevStats = getMonthStatsComplete(prevYear, prevMonth);
     
     const sortedWorkers = WORKERS.map(worker => {
