@@ -1494,7 +1494,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.6.1</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.7.0</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
@@ -4670,6 +4670,9 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             // Sortuj według score (malejąco)
             allScores.sort((a, b) => b.score - a.score);
 
+            // Znajdź najlepszy score (dla relatywnego progress bara)
+            const maxScore = allScores.length > 0 ? allScores[0].score : 100;
+
             consistencyEl.innerHTML = WORKERS.map(worker => {
                 const values = workerData[worker];
                 if (values.length < 3) return '';
@@ -4687,6 +4690,9 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 // HYBRID: Percentyl + minimalny próg
                 const workerIndex = allScores.findIndex(w => w.worker === worker);
                 const percentile = allScores.length > 0 ? ((allScores.length - workerIndex) / allScores.length) * 100 : 0;
+
+                // Progress bar relatywny (najlepszy = 100%)
+                const relativeProgress = maxScore > 0 ? (score / maxScore) * 100 : 0;
 
                 let rating = '';
                 let cssClass = '';
@@ -4725,7 +4731,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         </div>
                         <div class="consistency-meter">
                             <div class="consistency-bar">
-                                <div class="consistency-fill ${cssClass}" style="width: ${score}%"></div>
+                                <div class="consistency-fill ${cssClass}" style="width: ${relativeProgress}%"></div>
                             </div>
                             <div class="consistency-score" style="color: ${workerColors[worker]}">${score.toFixed(0)}</div>
                         </div>
