@@ -34,14 +34,6 @@
             --wowa-dark: #ff4757;
         }
 
-        body.light-mode {
-            --bg-primary: #f5f5f5;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #e0e0e0;
-            --text-primary: #1a1a1a;
-            --text-secondary: #666666;
-            --border: #cccccc;
-        }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -81,22 +73,6 @@
             flex-wrap: wrap;
         }
 
-        .theme-toggle {
-            background: var(--bg-tertiary);
-            border: 2px solid var(--border);
-            color: var(--text-primary);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: all 0.3s;
-        }
-
-        .theme-toggle:hover {
-            background: var(--accent);
-            border-color: var(--accent);
-            transform: scale(1.05);
-        }
 
         .container {
             max-width: 1400px;
@@ -941,6 +917,7 @@
         .year-selector {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
         }
 
@@ -952,6 +929,7 @@
             border-radius: 5px;
             font-size: 1rem;
             cursor: pointer;
+            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -1233,18 +1211,295 @@
             transform: scale(1.02);
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
         }
+
+        /* Nowe style dla modułów statystyk */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+            padding: 1.5rem;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(255, 107, 53, 0.3);
+        }
+
+        .stat-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        .stat-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .stat-sublabel {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background: var(--bg-tertiary);
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .record-item:hover {
+            background: var(--bg-primary);
+            transform: translateX(5px);
+        }
+
+        .record-worker {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .record-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .record-date {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .streak-bar {
+            width: 100%;
+            height: 30px;
+            background: var(--bg-tertiary);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            margin: 0.5rem 0;
+        }
+
+        .streak-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            border-radius: 15px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .consistency-meter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin: 0.8rem 0;
+        }
+
+        .consistency-bar {
+            flex: 1;
+            height: 20px;
+            background: var(--bg-tertiary);
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .consistency-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .consistency-fill.excellent {
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+        }
+
+        .consistency-fill.good {
+            background: linear-gradient(90deg, #2196f3, #03a9f4);
+        }
+
+        .consistency-fill.fair {
+            background: linear-gradient(90deg, #ff9800, #ffc107);
+        }
+
+        .consistency-fill.poor {
+            background: linear-gradient(90deg, #f44336, #ff5722);
+        }
+
+        .consistency-score {
+            font-size: 1.5rem;
+            font-weight: 700;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .quarter-comparison {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .quarter-box {
+            background: var(--bg-tertiary);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .quarter-box:hover {
+            border-color: var(--accent);
+            transform: scale(1.05);
+        }
+
+        .quarter-label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .quarter-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .quarter-subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        /* Tooltip style */
+        .tooltip-trigger {
+            position: relative;
+            cursor: help;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .tooltip-icon {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: var(--accent);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tooltip-trigger:hover .tooltip-icon {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 1rem;
+            border-radius: 8px;
+            width: 300px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            z-index: 1000;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--accent);
+            transition: opacity 0.3s, visibility 0.3s;
+            pointer-events: none;
+        }
+
+        .tooltip-text::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -8px;
+            border-width: 8px;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.95) transparent transparent transparent;
+        }
+
+        .tooltip-trigger:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.2.0</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.6.1</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus">
                     <div class="sync-dot synced"></div>
                     <span id="syncText">Zsynchronizowano</span>
                 </div>
-                <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
                 <div class="pdf-dropdown">
                     <button class="excel-btn" onclick="togglePDFMenu()">
                         📄 Raport PDF ▼
@@ -1272,12 +1527,16 @@
 
         <!-- Dashboard View -->
         <div id="dashboardView">
-            <!-- Dashboard Month Selector -->
-            <div class="month-selector" style="margin-bottom: 1.5rem;">
+            <div class="month-selector">
                 <div class="month-nav">
                     <button onclick="changeDashboardMonth(-1)">◀</button>
                     <div class="month-display" id="dashboardMonthDisplay"></div>
                     <button onclick="changeDashboardMonth(1)">▶</button>
+                </div>
+                <div class="year-selector">
+                    <select id="yearSelectDashboard" onchange="changeYearFromDashboard()">
+                        <!-- Opcje generowane dynamicznie przez JS -->
+                    </select>
                 </div>
             </div>
 
@@ -1301,7 +1560,7 @@
             <div class="charts-grid">
                 <div class="chart-card">
                     <div class="chart-header">
-                        <div class="chart-title">📈 Trend produkcji (3 miesiące)</div>
+                        <div class="chart-title">📈 Trend produkcji (6 miesięcy)</div>
                     </div>
                     <div class="chart-wrapper">
                         <canvas id="dashboardTrendChart"></canvas>
@@ -1334,9 +1593,7 @@
                 </div>
                 <div class="year-selector">
                     <select id="yearSelect" onchange="changeYear()">
-                        <option value="2024">2024</option>
-                        <option value="2025" selected>2025</option>
-                        <option value="2026">2026</option>
+                        <!-- Opcje generowane dynamicznie przez JS -->
                     </select>
                 </div>
             </div>
@@ -1377,9 +1634,17 @@
 
         <!-- Yearly View -->
         <div id="yearlyView" style="display: none;">
+            <div class="month-selector">
+                <div class="year-selector" style="margin-left: auto;">
+                    <select id="yearSelectYearly" onchange="changeYearFromYearly()">
+                        <!-- Opcje generowane dynamicznie -->
+                    </select>
+                </div>
+            </div>
+
             <div class="summary-section">
                 <div class="summary-title">📈 Podsumowanie roczne <span id="yearlyTitle"></span></div>
-                
+
                 <div id="yearlyTotalCard"></div>
                 
                 <div class="podium-section" id="yearlyStats"></div>
@@ -1390,9 +1655,17 @@
 
         <!-- Analytics View -->
         <div id="analyticsView" style="display: none;">
+            <div class="month-selector">
+                <div class="year-selector" style="margin-left: auto;">
+                    <select id="yearSelectAnalytics" onchange="changeYearFromAnalytics()">
+                        <!-- Opcje generowane dynamicznie -->
+                    </select>
+                </div>
+            </div>
+
             <div class="summary-section">
                 <div class="summary-title">🔬 Zaawansowana analityka</div>
-                
+
                 <div class="analysis-grid" id="analysisCards"></div>
                 
                 <div class="charts-grid">
@@ -1416,7 +1689,7 @@
 
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div class="chart-title">🎯 Ranking według średniej (z całego roku)</div>
+                            <div class="chart-title" id="averageRankingTitle">🎯 Ranking według średniej (z całego roku)</div>
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="averageRankingChart"></canvas>
@@ -1425,12 +1698,90 @@
 
                     <div class="chart-card">
                         <div class="chart-header">
-                            <div class="chart-title">📊 Rozkład produkcji (z całego roku)</div>
+                            <div class="chart-title" id="distributionTitle">📊 Rozkład produkcji (z całego roku)</div>
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="distributionChart"></canvas>
                         </div>
                     </div>
+                </div>
+
+                <!-- Nowe moduły statystyk -->
+                <div class="stats-grid" id="recordsSection">
+                    <!-- Rekordy osobiste -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">🏆</div>
+                            <div class="stat-title">Rekordy Osobiste</div>
+                        </div>
+                        <div id="personalRecords"></div>
+                    </div>
+
+                    <!-- Rekord zespołowy -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">👑</div>
+                            <div class="stat-title">Rekord Zespołowy</div>
+                        </div>
+                        <div id="teamRecord"></div>
+                    </div>
+
+                    <!-- Najlepszy tydzień -->
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-title">Najlepszy Tydzień</div>
+                        </div>
+                        <div id="bestWeek"></div>
+                    </div>
+                </div>
+
+                <!-- Spójność produkcji -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title tooltip-trigger">
+                            📊 Stabilność Produkcji
+                            <span class="tooltip-icon">?</span>
+                            <div class="tooltip-text">
+                                <strong>Co to oznacza?</strong><br><br>
+                                Mierzy jak <strong>stabilna i przewidywalna</strong> jest produkcja każdego pracownika.<br><br>
+                                <strong>HYBRID skala:</strong><br>
+                                • Score < 20 = <strong>Wymaga poprawy</strong><br>
+                                • Top 25% zespołu = <strong>Doskonała</strong><br>
+                                • 25-50% = <strong>Bardzo dobra</strong><br>
+                                • 50-75% = <strong>Dobra</strong><br>
+                                • Bottom 25% = <strong>Średnia</strong><br><br>
+                                <em>Przydatne do planowania i porównania w zespole.</em>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="consistencySection"></div>
+                </div>
+
+                <!-- Serie dni -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title tooltip-trigger">
+                            🔥 Serie Produkcji Powyżej Średniej
+                            <span class="tooltip-icon">?</span>
+                            <div class="tooltip-text">
+                                <strong>Co to oznacza?</strong><br><br>
+                                Pokazuje <strong>najdłuższą serię dni z rzędu</strong>, kiedy pracownik robił więcej niż jego osobista średnia.<br><br>
+                                • <strong>Rekord</strong> - najdłuższa seria w historii<br>
+                                • <strong>Aktualna seria 🔥</strong> - trwa właśnie teraz<br><br>
+                                <em>Dni wolne nie przerywają serii.</em>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="streaksSection"></div>
+                </div>
+
+                <!-- Porównanie kwartałów -->
+                <div class="chart-card">
+                    <div class="chart-header">
+                        <div class="chart-title">📈 Porównanie Kwartałów {CURRENT_YEAR}</div>
+                    </div>
+                    <div id="quartersSection"></div>
                 </div>
             </div>
         </div>
@@ -3040,9 +3391,13 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             if (dashboardMonth < 0) {
                 dashboardMonth = 11;
                 dashboardYear--;
+                currentYear = dashboardYear; // Synchronizuj
+                syncAllYearSelectors();
             } else if (dashboardMonth > 11) {
                 dashboardMonth = 0;
                 dashboardYear++;
+                currentYear = dashboardYear; // Synchronizuj
+                syncAllYearSelectors();
             }
 
             // Nie pozwól wybrać przyszłych miesięcy
@@ -3051,6 +3406,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 (dashboardYear === now.getFullYear() && dashboardMonth > now.getMonth())) {
                 dashboardMonth = now.getMonth();
                 dashboardYear = now.getFullYear();
+                currentYear = dashboardYear; // Synchronizuj
+                syncAllYearSelectors();
             }
 
             renderDashboard();
@@ -3223,13 +3580,13 @@ function getMonthStatsComplete(year, month, maxDays = null) {
         dashboardTrendChart.destroy();
     }
     
-    // Trend ostatnich 3 miesięcy - używamy pełnych dni
+    // Trend ostatnich 6 miesięcy - używamy pełnych dni
     const months = [];
     const totals = [];
     const forecasts = [];
     const today = new Date();
 
-    for (let i = 2; i >= 0; i--) {
+    for (let i = 5; i >= 0; i--) {
         const month = dashboardMonth - i;
         const year = month < 0 ? dashboardYear - 1 : dashboardYear;
         const adjustedMonth = month < 0 ? 12 + month : month;
@@ -3271,7 +3628,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
     const hasForecast = forecasts.some(f => f !== null);
     if (hasForecast) {
         // POPRAWIONA LOGIKA: Przerywana linia od poprzedniego miesiąca do prognozy
-        // Wykres pokazuje 3 miesiące: [0]=Paź, [1]=Lis, [2]=Gru(prognoza)
+        // Wykres pokazuje 6 miesięcy z prognozą na ostatnim
         const forecastIndex = forecasts.findIndex(f => f !== null);
 
         if (forecastIndex !== -1) {
@@ -3508,12 +3865,14 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 3: { total: 0, count: 0 }
             };
             
-            // Zbierz dane dla zmian
+            // Zbierz dane dla zmian (tylko z wybranego roku)
             Object.keys(data).forEach(dayKey => {
                 const [year, month, day] = dayKey.split('-').map(Number);
+                if (year !== currentYear) return; // Filtruj według wybranego roku
+
                 const date = new Date(year, month - 1, day);
                 const dayData = data[dayKey];
-                
+
                 WORKERS.forEach(worker => {
                     if (dayData[worker]) {
                         const shift = getShiftForDay(worker, date);
@@ -3759,6 +4118,10 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             renderYoYGrowthChart();
             renderAverageRankingChart();
             renderDistributionChart();
+            renderRecords();
+            renderConsistencyScores();
+            renderStreaks();
+            renderQuarterComparison();
         }
 
         function renderShiftEfficiencyChart() {
@@ -3778,9 +4141,11 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             
             Object.keys(data).forEach(dayKey => {
                 const [year, month, day] = dayKey.split('-').map(Number);
+                if (year !== currentYear) return; // Filtruj według wybranego roku
+
                 const date = new Date(year, month - 1, day);
                 const dayData = data[dayKey];
-                
+
                 WORKERS.forEach(worker => {
                     if (dayData[worker]) {
                         const shift = getShiftForDay(worker, date);
@@ -3918,11 +4283,17 @@ function getMonthStatsComplete(year, month, maxDays = null) {
         function renderAverageRankingChart() {
             const ctx = document.getElementById('averageRankingChart');
             if (!ctx) return;
-            
+
+            // Zaktualizuj tytuł z aktualnym rokiem
+            const titleEl = document.getElementById('averageRankingTitle');
+            if (titleEl) {
+                titleEl.textContent = `🎯 Ranking według średniej (${currentYear})`;
+            }
+
             if (averageRankingChart) {
                 averageRankingChart.destroy();
             }
-            
+
             const data = getProductionData();
             const today = new Date();
             const workerStats = {};
@@ -3938,9 +4309,9 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             Object.keys(data).forEach(dayKey => {
                 const [year, month, day] = dayKey.split('-').map(Number);
                 const date = new Date(year, month - 1, day);
-                
-                // Pomijamy przyszłe dni
-                if (date > today) return;
+
+                // Pomijamy przyszłe dni i dni z innych lat (tylko wybrany rok)
+                if (date > today || year !== currentYear) return;
                 
                 const dayData = data[dayKey];
                 
@@ -4047,11 +4418,17 @@ function getMonthStatsComplete(year, month, maxDays = null) {
         function renderDistributionChart() {
             const ctx = document.getElementById('distributionChart');
             if (!ctx) return;
-            
+
+            // Zaktualizuj tytuł z aktualnym rokiem
+            const titleEl = document.getElementById('distributionTitle');
+            if (titleEl) {
+                titleEl.textContent = `📊 Rozkład produkcji (${currentYear})`;
+            }
+
             if (distributionChart) {
                 distributionChart.destroy();
             }
-            
+
             // Zbierz dane z całego roku
             const data = getProductionData();
             const yearlyTotals = {};
@@ -4124,9 +4501,451 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             });
         }
 
+        // === NOWE FUNKCJE DLA STATYSTYK ===
+
+        function renderRecords() {
+            const data = getProductionData();
+            const today = new Date();
+            const personalRecordsEl = document.getElementById('personalRecords');
+            const teamRecordEl = document.getElementById('teamRecord');
+            const bestWeekEl = document.getElementById('bestWeek');
+
+            if (!personalRecordsEl || !teamRecordEl || !bestWeekEl) return;
+
+            // Znajdź rekordy osobiste
+            const personalBests = {};
+            WORKERS.forEach(worker => {
+                personalBests[worker] = { value: 0, date: null };
+            });
+
+            let teamBest = { value: 0, date: null, breakdown: {} };
+            let weeklyData = {};
+
+            Object.keys(data).forEach(dayKey => {
+                const [year, month, day] = dayKey.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+
+                if (date > today) return;
+
+                const dayData = data[dayKey];
+                let dayTotal = 0;
+
+                WORKERS.forEach(worker => {
+                    const value = dayData[worker] || 0;
+                    dayTotal += value;
+
+                    if (value > personalBests[worker].value) {
+                        personalBests[worker].value = value;
+                        personalBests[worker].date = dayKey;
+                    }
+                });
+
+                if (dayTotal > teamBest.value) {
+                    teamBest.value = dayTotal;
+                    teamBest.date = dayKey;
+                    teamBest.breakdown = { ...dayData };
+                }
+
+                // Tydzień (ISO week number)
+                const weekKey = getISOWeek(date) + '-' + year;
+                if (!weeklyData[weekKey]) {
+                    weeklyData[weekKey] = 0;
+                }
+                weeklyData[weekKey] += dayTotal;
+            });
+
+            // Renderuj rekordy osobiste
+            const workerColors = {
+                'Kamil': 'var(--kamil)',
+                'Igor': 'var(--igor)',
+                'Jarek': 'var(--jarek)',
+                'Wowa': 'var(--wowa)'
+            };
+
+            // Posortuj według największego wyniku
+            const sortedWorkers = WORKERS.map(worker => ({
+                worker,
+                best: personalBests[worker]
+            }))
+            .filter(item => item.best.value > 0)
+            .sort((a, b) => b.best.value - a.best.value);
+
+            personalRecordsEl.innerHTML = sortedWorkers.map(item => {
+                const { worker, best } = item;
+                const dateObj = parseDayKey(best.date);
+                const dateStr = dateObj ? `${dateObj.day}.${dateObj.month + 1}.${dateObj.year}` : '';
+
+                return `
+                    <div class="record-item">
+                        <div>
+                            <div class="record-worker" style="color: ${workerColors[worker]}">${worker}</div>
+                            <div class="record-date">${dateStr}</div>
+                        </div>
+                        <div class="record-value">${best.value.toLocaleString()} kg</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Renderuj rekord zespołowy
+            if (teamBest.value > 0) {
+                const dateObj = parseDayKey(teamBest.date);
+                const dateStr = dateObj ? `${dateObj.day}.${dateObj.month + 1}.${dateObj.year}` : '';
+
+                teamRecordEl.innerHTML = `
+                    <div class="stat-value">${teamBest.value.toLocaleString()} kg</div>
+                    <div class="stat-label">${dateStr}</div>
+                    <div style="margin-top: 1rem;">
+                        ${WORKERS.map(w => {
+                            const val = teamBest.breakdown[w] || 0;
+                            return val > 0 ? `<div class="stat-sublabel">${w}: ${val.toLocaleString()} kg</div>` : '';
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            // Najlepszy tydzień
+            let bestWeek = { key: null, value: 0 };
+            Object.keys(weeklyData).forEach(weekKey => {
+                if (weeklyData[weekKey] > bestWeek.value) {
+                    bestWeek.value = weeklyData[weekKey];
+                    bestWeek.key = weekKey;
+                }
+            });
+
+            if (bestWeek.value > 0) {
+                const [week, year] = bestWeek.key.split('-');
+                bestWeekEl.innerHTML = `
+                    <div class="stat-value">${bestWeek.value.toLocaleString()} kg</div>
+                    <div class="stat-label">Tydzień ${week}, ${year}</div>
+                `;
+            }
+        }
+
+        function renderConsistencyScores() {
+            const consistencyEl = document.getElementById('consistencySection');
+            if (!consistencyEl) return;
+
+            const data = getProductionData();
+            const today = new Date();
+
+            const workerData = {};
+            WORKERS.forEach(worker => {
+                workerData[worker] = [];
+            });
+
+            Object.keys(data).forEach(dayKey => {
+                const [year, month, day] = dayKey.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+
+                if (date > today || year !== currentYear) return;
+
+                const dayData = data[dayKey];
+                WORKERS.forEach(worker => {
+                    const shift = getShiftForDay(worker, date);
+                    if (shift !== 0 && dayData[worker] !== undefined) {
+                        workerData[worker].push(dayData[worker]);
+                    }
+                });
+            });
+
+            const workerColors = {
+                'Kamil': 'var(--kamil)',
+                'Igor': 'var(--igor)',
+                'Jarek': 'var(--jarek)',
+                'Wowa': 'var(--wowa)'
+            };
+
+            // HYBRID SCALE: Oblicz score dla wszystkich pracowników
+            const allScores = [];
+            WORKERS.forEach(worker => {
+                const values = workerData[worker];
+                if (values.length >= 3) {
+                    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                    const stdDev = Math.sqrt(variance);
+                    const cv = mean > 0 ? (stdDev / mean) * 100 : 0;
+                    const score = Math.max(0, 100 - cv);
+                    allScores.push({ worker, score });
+                }
+            });
+
+            // Sortuj według score (malejąco)
+            allScores.sort((a, b) => b.score - a.score);
+
+            consistencyEl.innerHTML = WORKERS.map(worker => {
+                const values = workerData[worker];
+                if (values.length < 3) return '';
+
+                const mean = values.reduce((a, b) => a + b, 0) / values.length;
+                const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+                const stdDev = Math.sqrt(variance);
+
+                // Współczynnik zmienności (CV)
+                const cv = mean > 0 ? (stdDev / mean) * 100 : 0;
+
+                // Score: im niższy CV, tym lepszy (odwrotnie)
+                let score = Math.max(0, 100 - cv);
+
+                // HYBRID: Percentyl + minimalny próg
+                const workerIndex = allScores.findIndex(w => w.worker === worker);
+                const percentile = allScores.length > 0 ? ((allScores.length - workerIndex) / allScores.length) * 100 : 0;
+
+                let rating = '';
+                let cssClass = '';
+                let percentileLabel = '';
+
+                // Minimalny próg: score < 20 = zawsze "Wymaga poprawy"
+                if (score < 20) {
+                    rating = 'Wymaga poprawy';
+                    cssClass = 'poor';
+                    percentileLabel = 'Bardzo niski wynik';
+                }
+                // Dynamiczna skala bazowana na percentylach
+                else if (percentile >= 75) {
+                    rating = 'Doskonała';
+                    cssClass = 'excellent';
+                    percentileLabel = `Top ${Math.round(100 - percentile + 25)}% w zespole`;
+                } else if (percentile >= 50) {
+                    rating = 'Bardzo dobra';
+                    cssClass = 'good';
+                    percentileLabel = 'Powyżej średniej zespołu';
+                } else if (percentile >= 25) {
+                    rating = 'Dobra';
+                    cssClass = 'fair';
+                    percentileLabel = 'Poniżej średniej zespołu';
+                } else {
+                    rating = 'Średnia';
+                    cssClass = 'fair';
+                    percentileLabel = `Dolne ${Math.round(percentile)}% zespołu`;
+                }
+
+                return `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; font-size: 1.1rem; color: ${workerColors[worker]}">${worker}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">${rating}</div>
+                        </div>
+                        <div class="consistency-meter">
+                            <div class="consistency-bar">
+                                <div class="consistency-fill ${cssClass}" style="width: ${score}%"></div>
+                            </div>
+                            <div class="consistency-score" style="color: ${workerColors[worker]}">${score.toFixed(0)}</div>
+                        </div>
+                        <div class="stat-sublabel">Średnia: ${mean.toFixed(0)} kg | Odchylenie: ±${stdDev.toFixed(0)} kg</div>
+                        <div class="stat-sublabel" style="margin-top: 0.3rem; font-style: italic;">📊 ${percentileLabel}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStreaks() {
+            const streaksEl = document.getElementById('streaksSection');
+            if (!streaksEl) return;
+
+            const data = getProductionData();
+            const today = new Date();
+
+            const workerStreaks = {};
+            WORKERS.forEach(worker => {
+                workerStreaks[worker] = {
+                    current: 0,
+                    best: 0,
+                    average: 0,
+                    values: []
+                };
+            });
+
+            // Oblicz średnie dla każdego pracownika
+            Object.keys(data).forEach(dayKey => {
+                const [year, month, day] = dayKey.split('-').map(Number);
+                const date = new Date(year, month - 1, day);
+
+                if (date > today || year !== currentYear) return;
+
+                const dayData = data[dayKey];
+                WORKERS.forEach(worker => {
+                    const shift = getShiftForDay(worker, date);
+                    if (shift !== 0 && dayData[worker] !== undefined) {
+                        workerStreaks[worker].values.push(dayData[worker]);
+                    }
+                });
+            });
+
+            WORKERS.forEach(worker => {
+                const values = workerStreaks[worker].values;
+                if (values.length > 0) {
+                    workerStreaks[worker].average = values.reduce((a, b) => a + b, 0) / values.length;
+                }
+            });
+
+            // Znajdź serie (tylko dni robocze)
+            const sortedDays = Object.keys(data).sort();
+            WORKERS.forEach(worker => {
+                let tempStreak = 0;
+                let bestStreak = 0;
+
+                sortedDays.forEach(dayKey => {
+                    const [year, month, day] = dayKey.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+
+                    if (date > today || year !== currentYear) return;
+
+                    const dayData = data[dayKey];
+                    const shift = getShiftForDay(worker, date);
+
+                    // Liczymy tylko dni robocze (shift !== 0)
+                    if (shift !== 0) {
+                        const value = dayData[worker];
+
+                        // Jeśli brak danych lub wartość <= średniej, resetuj
+                        if (value === undefined || value <= workerStreaks[worker].average) {
+                            if (tempStreak > bestStreak) {
+                                bestStreak = tempStreak;
+                            }
+                            tempStreak = 0;
+                        } else {
+                            // Produkcja > średniej, zwiększ streak
+                            tempStreak++;
+                        }
+                    }
+                    // Jeśli dzień wolny (shift === 0), nie robimy nic - nie przerywa serii
+                });
+
+                // Sprawdź ostatnią serię
+                if (tempStreak > bestStreak) {
+                    bestStreak = tempStreak;
+                }
+
+                // Aktualna seria = sprawdź ostatnie dni od końca
+                let currentStreak = 0;
+                for (let i = sortedDays.length - 1; i >= 0; i--) {
+                    const dayKey = sortedDays[i];
+                    const [year, month, day] = dayKey.split('-').map(Number);
+                    const date = new Date(year, month - 1, day);
+
+                    if (date > today || year !== currentYear) continue;
+
+                    const dayData = data[dayKey];
+                    const shift = getShiftForDay(worker, date);
+
+                    if (shift !== 0) {
+                        const value = dayData[worker];
+                        if (value !== undefined && value > workerStreaks[worker].average) {
+                            currentStreak++;
+                        } else {
+                            break; // Przerwij serię
+                        }
+                    }
+                    // Dni wolne nie przerywają liczenia aktualnej serii
+                }
+
+                workerStreaks[worker].current = currentStreak;
+                workerStreaks[worker].best = bestStreak;
+            });
+
+            const workerColors = {
+                'Kamil': 'var(--kamil)',
+                'Igor': 'var(--igor)',
+                'Jarek': 'var(--jarek)',
+                'Wowa': 'var(--wowa)'
+            };
+
+            streaksEl.innerHTML = WORKERS.map(worker => {
+                const streak = workerStreaks[worker];
+                const maxStreak = Math.max(...WORKERS.map(w => workerStreaks[w].best));
+                const percentage = maxStreak > 0 ? (streak.best / maxStreak) * 100 : 0;
+
+                return `
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div style="font-weight: 600; font-size: 1.1rem; color: ${workerColors[worker]}">${worker}</div>
+                            <div style="font-size: 0.9rem; color: var(--text-secondary);">Rekord: ${streak.best} dni</div>
+                        </div>
+                        <div class="streak-bar">
+                            <div class="streak-fill" style="width: ${percentage}%">
+                                ${streak.best > 0 ? streak.best + ' dni' : ''}
+                            </div>
+                        </div>
+                        <div class="stat-sublabel">
+                            ${streak.current > 0 ? `🔥 Aktualna seria: ${streak.current} dni` : 'Brak aktywnej serii'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuarterComparison() {
+            const quartersEl = document.getElementById('quartersSection');
+            if (!quartersEl) return;
+
+            // Zaktualizuj tytuł z bieżącym rokiem
+            const titleEl = quartersEl.closest('.chart-card').querySelector('.chart-title');
+            if (titleEl) {
+                titleEl.textContent = `📈 Porównanie Kwartałów ${currentYear}`;
+            }
+
+            const data = getProductionData();
+            const quarters = [
+                { name: 'Q1', months: [0, 1, 2], total: 0 },
+                { name: 'Q2', months: [3, 4, 5], total: 0 },
+                { name: 'Q3', months: [6, 7, 8], total: 0 },
+                { name: 'Q4', months: [9, 10, 11], total: 0 }
+            ];
+
+            Object.keys(data).forEach(dayKey => {
+                const [year, month, day] = dayKey.split('-').map(Number);
+                if (year !== currentYear) return;
+
+                const dayData = data[dayKey];
+                let dayTotal = 0;
+                WORKERS.forEach(worker => {
+                    dayTotal += dayData[worker] || 0;
+                });
+
+                quarters.forEach(q => {
+                    if (q.months.includes(month - 1)) {
+                        q.total += dayTotal;
+                    }
+                });
+            });
+
+            const maxQuarter = Math.max(...quarters.map(q => q.total));
+
+            quartersEl.innerHTML = `
+                <div class="quarter-comparison">
+                    ${quarters.map(q => {
+                        const tons = (q.total / 1000).toFixed(1);
+                        const isMax = q.total === maxQuarter && maxQuarter > 0;
+                        return `
+                            <div class="quarter-box" style="${isMax ? 'border-color: var(--accent);' : ''}">
+                                <div class="quarter-label">${q.name}</div>
+                                <div class="quarter-value">${tons}t</div>
+                                <div class="quarter-subtitle">${q.total.toLocaleString()} kg</div>
+                                ${isMax ? '<div style="margin-top: 0.5rem; font-size: 1.5rem;">👑</div>' : ''}
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function getISOWeek(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0);
+            d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+            const yearStart = new Date(d.getFullYear(), 0, 1);
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        function parseDayKey(dayKey) {
+            if (!dayKey) return null;
+            const [year, month, day] = dayKey.split('-').map(Number);
+            return { year, month: month - 1, day };
+        }
+
         // Pozostałe funkcje z oryginalnego kodu (renderCalendar, modals, etc.)
         // ... (cały pozostały kod z oryginalnego pliku)
-        
+
         function renderCalendar() {
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const data = getProductionData();
@@ -5156,6 +5975,27 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 });
             }
             
+            // Oblicz medale dla każdego pracownika (ile razy był 1., 2., 3. w miesiącu)
+            const workerMedals = {};
+            WORKERS.forEach(worker => {
+                workerMedals[worker] = { gold: 0, silver: 0, bronze: 0 };
+            });
+
+            // Dla każdego miesiąca znajdź top 3
+            monthlyStats.forEach(monthStat => {
+                const monthRanking = WORKERS.map(worker => ({
+                    name: worker,
+                    value: monthStat.data[worker]
+                }))
+                .filter(w => w.value > 0) // Tylko pracownicy z produkcją
+                .sort((a, b) => b.value - a.value);
+
+                // Przyznaj medale
+                if (monthRanking.length >= 1) workerMedals[monthRanking[0].name].gold++;
+                if (monthRanking.length >= 2) workerMedals[monthRanking[1].name].silver++;
+                if (monthRanking.length >= 3) workerMedals[monthRanking[2].name].bronze++;
+            });
+
             const sortedWorkers = WORKERS.map(worker => ({
                 name: worker,
                 total: yearlyTotals[worker]
@@ -5279,7 +6119,37 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 if (workerFullMonths > 0) {
                     monthlyAvgHtml = `<div class="podium-label">Średnia miesięczna: ${monthlyAvgWorker} kg/miesiąc • ${workerFullMonths} ${workerFullMonths === 1 ? 'miesiąc' : 'miesięcy'}</div>`;
                 }
-                
+
+                // Generuj mini medaliki
+                const medals_worker = workerMedals[worker.name];
+                let medalsHtml = '<div style="margin-top: 0.5rem; font-size: 1.19rem; line-height: 1.4;">';
+
+                if (medals_worker.gold > 0) {
+                    medalsHtml += '<div style="margin-bottom: 0.2rem;">';
+                    for (let i = 0; i < medals_worker.gold; i++) {
+                        medalsHtml += '🥇';
+                    }
+                    medalsHtml += `</div>`;
+                }
+
+                if (medals_worker.silver > 0) {
+                    medalsHtml += '<div style="margin-bottom: 0.2rem;">';
+                    for (let i = 0; i < medals_worker.silver; i++) {
+                        medalsHtml += '🥈';
+                    }
+                    medalsHtml += `</div>`;
+                }
+
+                if (medals_worker.bronze > 0) {
+                    medalsHtml += '<div>';
+                    for (let i = 0; i < medals_worker.bronze; i++) {
+                        medalsHtml += '🥉';
+                    }
+                    medalsHtml += `</div>`;
+                }
+
+                medalsHtml += '</div>';
+
                 rankingHtml += `
                     <div class="podium-card rank-${rank} ${worker.name.toLowerCase()}">
                         <div class="podium-rank">${medals[index]}</div>
@@ -5287,6 +6157,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         <div class="podium-value">${worker.total.toFixed(0)} kg</div>
                         <div class="podium-label">Średnia dzienna: ${avg} kg/dzień • ${days} dni</div>
                         ${monthlyAvgHtml}
+                        ${medalsHtml}
                     </div>
                 `;
             });
@@ -5347,10 +6218,53 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         function changeYear() {
             currentYear = parseInt(document.getElementById('yearSelect').value);
+            dashboardYear = currentYear; // Synchronizuj dashboard
+            syncAllYearSelectors();
             renderCalendar();
             if (document.getElementById('yearlyView').style.display !== 'none') {
                 renderYearlyStats();
             }
+            if (document.getElementById('analyticsView').style.display !== 'none') {
+                renderAnalytics();
+            }
+        }
+
+        function changeYearFromYearly() {
+            currentYear = parseInt(document.getElementById('yearSelectYearly').value);
+            dashboardYear = currentYear; // Synchronizuj dashboard
+            syncAllYearSelectors();
+            renderYearlyStats();
+        }
+
+        function changeYearFromAnalytics() {
+            currentYear = parseInt(document.getElementById('yearSelectAnalytics').value);
+            dashboardYear = currentYear; // Synchronizuj dashboard
+            syncAllYearSelectors();
+            renderAnalytics();
+        }
+
+        function changeYearFromDashboard() {
+            currentYear = parseInt(document.getElementById('yearSelectDashboard').value);
+            dashboardYear = currentYear;
+            syncAllYearSelectors();
+            renderDashboard();
+        }
+
+        function syncAllYearSelectors() {
+            // Synchronizuj wszystkie selektory roku
+            const selectors = ['yearSelect', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
+            selectors.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    // Sprawdź czy opcja istnieje
+                    const option = el.querySelector(`option[value="${currentYear}"]`);
+                    if (!option) {
+                        // Dodaj nową opcję jeśli nie istnieje
+                        populateYearSelect();
+                    }
+                    el.value = currentYear;
+                }
+            });
         }
 
         function showView(view) {
@@ -5379,11 +6293,6 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 document.getElementById('analyticsView').style.display = 'block';
                 renderAnalytics();
             }
-        }
-
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
         }
 
         function exportData() {
@@ -5448,8 +6357,36 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             event.target.value = '';
         }
 
+        function populateYearSelect() {
+            const currentYearValue = new Date().getFullYear();
+            const startYear = 2024; // Rok rozpoczęcia aplikacji
+            const endYear = currentYearValue + 2; // +2 lata w przyszłość
+
+            // Wypełnij wszystkie selektory roku
+            const selectors = ['yearSelect', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
+            selectors.forEach(selectorId => {
+                const yearSelect = document.getElementById(selectorId);
+                if (!yearSelect) return;
+
+                yearSelect.innerHTML = '';
+
+                for (let year = startYear; year <= endYear; year++) {
+                    const option = document.createElement('option');
+                    option.value = year;
+                    option.textContent = year;
+                    if (year === currentYear) {
+                        option.selected = true;
+                    }
+                    yearSelect.appendChild(option);
+                }
+            });
+        }
+
         window.onload = function() {
             initData();
+
+            // Wypełnij select z latami
+            populateYearSelect();
 
             // Check Firebase connection and load data
             if (isFirebaseInitialized) {
@@ -5459,12 +6396,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             } else {
                 updateSyncStatus('error', 'Tryb offline - brak Firebase');
             }
-            
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-mode');
-            }
-            
+
             document.getElementById('yearSelect').value = currentYear;
             renderDashboard();
         };
