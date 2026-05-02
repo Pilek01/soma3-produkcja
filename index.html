@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statystyki Produkcji Flexo PRO v1.9.0</title>
+    <title>Statystyki Produkcji Flexo PRO v1.9.1</title>
     <style>
         * {
             margin: 0;
@@ -1507,7 +1507,7 @@
             opacity: 1;
         }
 
-        /* Flexo PRO v1.9.0 visual upgrade */
+        /* Flexo PRO v1.9.1 visual upgrade */
         :root {
             --bg-primary: #070b10;
             --bg-secondary: #111821;
@@ -1957,7 +1957,7 @@
             box-shadow: var(--panel-shadow);
         }
 
-        /* v1.9.0 targeted fixes: preserve monthly semantics and icon clarity */
+        /* v1.9.1 targeted fixes: preserve monthly semantics and icon clarity */
         .calendar-table .kamil-cell,
         .calendar-table tbody tr:nth-child(even) td.kamil-cell,
         .calendar-table .today-row td.kamil-cell {
@@ -2748,7 +2748,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.0</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.1</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus" onclick="openSyncToolsModal()" title="Ukryty transfer danych aktualnego miesiąca">
                     <div class="sync-dot synced"></div>
@@ -7647,7 +7647,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 if (!meta || !Number.isFinite(value) || value <= 0) return;
                 const text = `${value.toFixed(1)} kg/d`;
                 const x = meta.x;
-                const y = meta.y - 10;
+                const y = Math.max(chart.chartArea.top + 24, meta.y - 10);
                 const width = ctx.measureText(text).width + 16;
                 ctx.fillStyle = 'rgba(7, 11, 16, 0.74)';
                 ctx.strokeStyle = 'rgba(255, 210, 182, 0.22)';
@@ -7712,6 +7712,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    grace: '16%',
                     grid: { color: 'rgba(255,255,255,0.1)' },
                     ticks: { 
                         color: '#b0b0b0',
@@ -7922,7 +7923,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     if (!meta || !Number.isFinite(value) || value <= 0) return;
                     const text = `${Math.round(value).toLocaleString('pl-PL')} kg`;
                     const x = meta.x;
-                    const y = meta.y - 10;
+                    const y = Math.max(chart.chartArea.top + 24, meta.y - 10);
                     const width = ctx.measureText(text).width + 16;
                     ctx.fillStyle = 'rgba(7, 11, 16, 0.74)';
                     ctx.strokeStyle = 'rgba(255, 210, 182, 0.22)';
@@ -11057,7 +11058,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         if (!meta || !Number.isFinite(value)) return;
                         const text = `${Math.round(value).toLocaleString('pl-PL')} kg`;
                         const x = meta.x;
-                        const y = meta.y - 10;
+                        const y = Math.max(chart.chartArea.top + 24, meta.y - 10);
                         const metrics = ctx.measureText(text);
                         const width = metrics.width + 16;
                         ctx.fillStyle = 'rgba(7, 11, 16, 0.74)';
@@ -12049,3 +12050,4 @@ function getMonthStatsComplete(year, month, maxDays = null) {
     </script>
 </body>
 </html>
+
