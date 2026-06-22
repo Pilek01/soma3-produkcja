@@ -432,6 +432,7 @@
             font-size: 0.9rem;
         }
 
+
         .progress-bar {
             width: 100%;
             height: 30px;
@@ -930,6 +931,21 @@
         .yearly-table .jarek-col { background: rgba(112, 161, 255, 0.05); }
         .yearly-table .wowa-col { background: rgba(255, 99, 72, 0.05); }
         .yearly-table .sum-col { background: rgba(255, 215, 0, 0.1); font-weight: 600; }
+
+        .yearly-table td.leader-cell {
+            font-weight: 900;
+            color: #fff3d0;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 122, 61, 0.1)) !important;
+            box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.35), 0 0 16px rgba(255, 215, 0, 0.1);
+        }
+
+        .yearly-table td.leader-cell::after {
+            content: '★';
+            margin-left: 0.35rem;
+            color: #ffd700;
+            font-size: 0.85rem;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+        }
 
         .year-selector {
             display: flex;
@@ -2068,6 +2084,14 @@
             height: 360px;
         }
 
+        #quarterlyView .quarterly-chart-card {
+            margin: 2rem 0;
+        }
+
+        #quarterlyView .quarterly-chart-card .chart-wrapper {
+            height: 380px;
+        }
+
         #analyticsView .weekly-production-card .chart-wrapper {
             height: 390px;
         }
@@ -2123,6 +2147,36 @@
 
         .month-compare-card {
             position: relative;
+        }
+
+        .month-compare-card.collapsed .chart-header {
+            margin-bottom: 0;
+        }
+
+        .month-compare-toggle {
+            border: 1px solid rgba(255, 210, 182, 0.28);
+            background: linear-gradient(180deg, rgba(255, 122, 61, 0.22), rgba(7, 11, 16, 0.78));
+            color: #ffd2b6;
+            border-radius: 999px;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+
+        .month-compare-toggle:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255, 122, 61, 0.7);
+            color: #fff;
+        }
+
+        .month-compare-body {
+            display: block;
+        }
+
+        .month-compare-card.collapsed .month-compare-body {
+            display: none;
         }
 
         .month-compare-controls {
@@ -2901,6 +2955,7 @@
         <div class="view-selector">
             <button class="view-btn active" onclick="showView('dashboard')">📊 Dashboard</button>
             <button class="view-btn" onclick="showView('monthly')">📅 Miesięczny</button>
+            <button class="view-btn" onclick="showView('quarterly')">📈 Kwartalny</button>
             <button class="view-btn" onclick="showView('yearly')">📈 Roczny</button>
             <button class="view-btn" onclick="showView('analytics')">🔬 Analityka</button>
         </div>
@@ -3030,6 +3085,34 @@
             </div>
         </div>
 
+        <!-- Quarterly View -->
+        <div id="quarterlyView" style="display: none;">
+            <div class="month-selector">
+                <div class="summary-title" style="margin: 0;">📈 Podsumowanie kwartalne <span id="quarterlyTitle"></span></div>
+                <div class="year-selector" style="margin-left: auto;">
+                    <select id="yearSelectQuarterly" onchange="changeYearFromQuarterly()">
+                        <!-- Opcje generowane dynamicznie -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="quarter-comparison" id="quarterlyCards"></div>
+
+            <div class="chart-card analytics-wide-card quarterly-chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">📊 Produkcja kwartalna według pracowników (kg/kwartał)</div>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="quarterlyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="summary-section">
+                <div class="summary-title">📋 Kwartały × pracownicy</div>
+                <div class="yearly-table" id="quarterlyTable"></div>
+            </div>
+        </div>
+
         <!-- Yearly View -->
         <div id="yearlyView" style="display: none;">
             <div class="month-selector">
@@ -3066,10 +3149,12 @@
 
                 <div class="analysis-grid" id="analysisCards"></div>
 
-                <div class="chart-card month-compare-card">
+                <div class="chart-card month-compare-card collapsed" id="monthCompareCard">
                     <div class="chart-header">
                         <div class="chart-title">⚖️ Porównaj miesiące</div>
+                        <button class="month-compare-toggle" id="monthCompareToggle" type="button" onclick="toggleMonthCompareCard()" aria-expanded="false" aria-controls="monthCompareBody">Rozwiń</button>
                     </div>
+                    <div class="month-compare-body" id="monthCompareBody">
                     <div class="month-compare-controls">
                         <label>
                             <span>Miesiąc bazowy</span>
@@ -3084,6 +3169,7 @@
                     <div class="month-compare-summary" id="monthCompareSummary"></div>
                     <div class="chart-wrapper month-compare-chart-wrapper">
                         <canvas id="monthCompareChart"></canvas>
+                    </div>
                     </div>
                 </div>
                 
@@ -3186,14 +3272,6 @@
                         </div>
                     </div>
                     <div id="streaksSection"></div>
-                </div>
-
-                <!-- Porównanie kwartałów -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title">📈 Porównanie Kwartałów {CURRENT_YEAR}</div>
-                    </div>
-                    <div id="quartersSection"></div>
                 </div>
             </div>
         </div>
@@ -6068,6 +6146,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         let dashboardPerformanceChart = null;
         let dashboardDailyProductionChart = null;
         let dashboardProductionComparisonChart = null;
+        let quarterlyChart = null;
         let shiftEfficiencyChart = null;
         let yoyGrowthChart = null;
         let averageRankingChart = null;
@@ -6247,6 +6326,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                     renderCalendar();
                 } else if (currentView === 'yearly') {
                     renderYearlyStats();
+                } else if (currentView === 'quarterly') {
+                    renderQuarterlyStats();
                 } else if (currentView === 'analytics') {
                     renderAnalytics();
                 }
@@ -6308,6 +6389,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                             renderCalendar();
                         } else if (currentView === 'yearly') {
                             renderYearlyStats();
+                        } else if (currentView === 'quarterly') {
+                            renderQuarterlyStats();
                         } else if (currentView === 'analytics') {
                             renderAnalytics();
                         }
@@ -6339,6 +6422,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                 if (currentView === 'dashboard') renderDashboard();
                 else if (currentView === 'monthly') renderCalendar();
                 else if (currentView === 'yearly') renderYearlyStats();
+                else if (currentView === 'quarterly') renderQuarterlyStats();
                 else if (currentView === 'analytics') renderAnalytics();
             };
             database.ref('maintenanceData').on('value', (snapshot) => {
@@ -6773,6 +6857,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             if (currentView === 'dashboard') renderDashboard();
             else if (currentView === 'monthly') renderCalendar();
             else if (currentView === 'yearly') renderYearlyStats();
+            else if (currentView === 'quarterly') renderQuarterlyStats();
             else if (currentView === 'analytics') renderAnalytics();
             scheduleChartEnhancements();
             previewMonthTransfer();
@@ -8575,6 +8660,23 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             `;
         }
 
+        function toggleMonthCompareCard() {
+            const card = document.getElementById('monthCompareCard');
+            const toggle = document.getElementById('monthCompareToggle');
+            if (!card || !toggle) return;
+
+            const isCollapsed = card.classList.toggle('collapsed');
+            toggle.setAttribute('aria-expanded', String(!isCollapsed));
+            toggle.textContent = isCollapsed ? 'Rozwiń' : 'Zwiń';
+
+            if (!isCollapsed) {
+                renderMonthComparison();
+                window.setTimeout(() => {
+                    if (monthCompareChart) monthCompareChart.resize();
+                }, 60);
+            }
+        }
+
         function renderMonthComparison() {
             const options = populateMonthCompareSelectors();
             const baseSelect = document.getElementById('compareBaseMonth');
@@ -10026,7 +10128,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 
                 let dayIndicator = '';
                 const isPast = date < today || (isCurrentMonth && day <= todayDay);
-                
+
                 if (workingCount > 0 && isPast && !isDayHoliday(dayKey)) {
                     if (dataCount === workingCount) {
                         dayIndicator = ' <span class="day-indicator day-complete">✅</span>';
@@ -10375,6 +10477,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 renderCalendar();
             } else if (currentView === 'yearly') {
                 renderYearlyStats();
+            } else if (currentView === 'quarterly') {
+                renderQuarterlyStats();
             } else if (currentView === 'analytics') {
                 renderAnalytics();
             }
@@ -11216,6 +11320,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     highlightSavedCalendarDay(savedYear, savedMonth, savedDay);
                 } else if (currentView === 'yearly') {
                     renderYearlyStats();
+                } else if (currentView === 'quarterly') {
+                    renderQuarterlyStats();
                 } else if (currentView === 'analytics') {
                     renderAnalytics();
                 }
@@ -11300,6 +11406,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 highlightSavedCalendarDay(savedYear, savedMonth, savedDay);
             } else if (currentView === 'yearly') {
                 renderYearlyStats();
+            } else if (currentView === 'quarterly') {
+                renderQuarterlyStats();
             } else if (currentView === 'analytics') {
                 renderAnalytics();
             }
@@ -11969,6 +12077,12 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             document.getElementById('forecastCard').innerHTML = html;
         }
 
+        function getRowLeaderWorkers(valuesByWorker) {
+            const maxValue = Math.max(...WORKERS.map(worker => Number(valuesByWorker?.[worker] || 0)));
+            if (!Number.isFinite(maxValue) || maxValue <= 0) return new Set();
+            return new Set(WORKERS.filter(worker => Number(valuesByWorker?.[worker] || 0) === maxValue));
+        }
+
         function renderYearlyStats() {
             const data = getProductionData();
             const monthlyStats = [];
@@ -12228,10 +12342,12 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             `;
             
             monthlyStats.forEach(month => {
+                const leaderWorkers = getRowLeaderWorkers(month.data);
                 tableHtml += `<tr>`;
                 tableHtml += `<td><strong>${month.month}</strong></td>`;
                 WORKERS.forEach(worker => {
-                    tableHtml += `<td class="${worker.toLowerCase()}-col">${month.data[worker].toFixed(0)} kg</td>`;
+                    const leaderClass = leaderWorkers.has(worker) ? ' leader-cell' : '';
+                    tableHtml += `<td class="${worker.toLowerCase()}-col${leaderClass}">${month.data[worker].toFixed(0)} kg</td>`;
                 });
                 tableHtml += `<td class="sum-col">${month.total.toFixed(0)} kg</td>`;
                 tableHtml += `</tr>`;
@@ -12249,6 +12365,164 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             
             document.getElementById('yearlyTable').innerHTML = tableHtml;
             document.getElementById('yearlyTitle').textContent = currentYear;
+        }
+
+        const QUARTER_LABELS = ['Q1', 'Q2', 'Q3', 'Q4'];
+        const QUARTER_RANGES = ['Sty-Mar', 'Kwi-Cze', 'Lip-Wrz', 'Paz-Gru'];
+
+        function buildQuarterlyStats(year = currentYear) {
+            const data = getProductionData();
+            const quarters = QUARTER_LABELS.map((label, index) => ({
+                label,
+                range: QUARTER_RANGES[index],
+                months: [index * 3, index * 3 + 1, index * 3 + 2],
+                total: 0,
+                days: new Set(),
+                workers: WORKERS.reduce((acc, worker) => {
+                    acc[worker] = 0;
+                    return acc;
+                }, {})
+            }));
+
+            Object.keys(data).forEach(dayKey => {
+                const [entryYear, month] = dayKey.split('-').map(Number);
+                if (entryYear !== year) return;
+
+                const quarterIndex = Math.floor((month - 1) / 3);
+                const quarter = quarters[quarterIndex];
+                if (!quarter) return;
+
+                const dayData = data[dayKey] || {};
+                let dayTotal = 0;
+                WORKERS.forEach(worker => {
+                    const value = Number(dayData[worker] || 0);
+                    if (!value) return;
+                    quarter.workers[worker] += value;
+                    quarter.total += value;
+                    dayTotal += value;
+                });
+                if (dayTotal > 0) quarter.days.add(dayKey);
+            });
+
+            return quarters.map(quarter => ({
+                ...quarter,
+                dayCount: quarter.days.size,
+                avg: quarter.days.size > 0 ? quarter.total / quarter.days.size : 0
+            }));
+        }
+
+        function renderQuarterlyStats() {
+            const cardsEl = document.getElementById('quarterlyCards');
+            const tableEl = document.getElementById('quarterlyTable');
+            const titleEl = document.getElementById('quarterlyTitle');
+            if (!cardsEl || !tableEl) return;
+            if (titleEl) titleEl.textContent = currentYear;
+
+            const quarters = buildQuarterlyStats(currentYear);
+            const yearTotal = quarters.reduce((sum, quarter) => sum + quarter.total, 0);
+            const yearDays = new Set();
+            const workerTotals = WORKERS.reduce((acc, worker) => {
+                acc[worker] = 0;
+                return acc;
+            }, {});
+            quarters.forEach(quarter => {
+                quarter.days.forEach(dayKey => yearDays.add(dayKey));
+                WORKERS.forEach(worker => workerTotals[worker] += quarter.workers[worker]);
+            });
+            const maxQuarterTotal = Math.max(...quarters.map(quarter => quarter.total));
+
+            cardsEl.innerHTML = quarters.map(quarter => {
+                const isBest = quarter.total === maxQuarterTotal && maxQuarterTotal > 0;
+                const tons = (quarter.total / 1000).toFixed(1);
+                return `
+                    <div class="quarter-box" style="${isBest ? 'border-color: var(--accent); box-shadow: 0 0 0 1px rgba(255, 122, 61, 0.28);' : ''}">
+                        <div class="quarter-label">${quarter.label} (${quarter.range})</div>
+                        <div class="quarter-value">${tons}t</div>
+                        <div class="quarter-subtitle">${quarter.total.toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</div>
+                        <div class="quarter-subtitle">${quarter.dayCount} dni | sr. ${quarter.avg.toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg/dzien</div>
+                        ${isBest ? '<div style="margin-top: 0.5rem; font-size: 1.5rem;">👑</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+
+            let tableHtml = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Kwartał</th>
+                            <th class="kamil-col" style="background: rgba(123, 237, 159, 0.2);">Kamil</th>
+                            <th class="igor-col" style="background: rgba(255, 165, 2, 0.2);">Igor</th>
+                            <th class="jarek-col" style="background: rgba(112, 161, 255, 0.2);">Jarek</th>
+                            <th class="wowa-col" style="background: rgba(255, 99, 72, 0.2);">Wowa</th>
+                            <th class="sum-col" style="background: rgba(255, 215, 0, 0.3);">SUMA</th>
+                            <th>Dni</th>
+                            <th>Śr./dzień</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            quarters.forEach(quarter => {
+                const leaderWorkers = getRowLeaderWorkers(quarter.workers);
+                tableHtml += `<tr>`;
+                tableHtml += `<td><strong>${quarter.label}</strong><br><span style="color: var(--text-secondary); font-size: 0.85rem;">${quarter.range}</span></td>`;
+                WORKERS.forEach(worker => {
+                    const leaderClass = leaderWorkers.has(worker) ? ' leader-cell' : '';
+                    tableHtml += `<td class="${worker.toLowerCase()}-col${leaderClass}">${quarter.workers[worker].toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</td>`;
+                });
+                tableHtml += `<td class="sum-col">${quarter.total.toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</td>`;
+                tableHtml += `<td>${quarter.dayCount}</td>`;
+                tableHtml += `<td>${quarter.avg.toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</td>`;
+                tableHtml += `</tr>`;
+            });
+
+            tableHtml += `<tr class="total-row">`;
+            tableHtml += `<td><strong>RAZEM</strong></td>`;
+            WORKERS.forEach(worker => {
+                tableHtml += `<td><strong>${workerTotals[worker].toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</strong></td>`;
+            });
+            tableHtml += `<td><strong>${yearTotal.toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</strong></td>`;
+            tableHtml += `<td><strong>${yearDays.size}</strong></td>`;
+            tableHtml += `<td><strong>${(yearDays.size > 0 ? yearTotal / yearDays.size : 0).toLocaleString('pl-PL', { maximumFractionDigits: 0 })} kg</strong></td>`;
+            tableHtml += `</tr></tbody></table>`;
+            tableEl.innerHTML = tableHtml;
+
+            renderQuarterlyChart(quarters);
+        }
+
+        function renderQuarterlyChart(quarters) {
+            const ctx = document.getElementById('quarterlyChart');
+            if (!ctx || typeof Chart === 'undefined') return;
+            if (quarterlyChart) quarterlyChart.destroy();
+
+            quarterlyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: quarters.map(quarter => `${quarter.label} (${quarter.range})`),
+                    datasets: WORKERS.map(worker => {
+                        const colors = getAnalyticsWorkerColors(worker);
+                        return {
+                            label: worker,
+                            data: quarters.map(quarter => quarter.workers[worker]),
+                            backgroundColor: colors.top,
+                            borderColor: colors.border,
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            borderSkipped: false
+                        };
+                    })
+                },
+                options: {
+                    ...getAnalyticsBaseOptions('kg'),
+                    plugins: {
+                        ...getAnalyticsBaseOptions('kg').plugins,
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#dbe7f4', padding: 16, font: { weight: '800' }, usePointStyle: true }
+                        }
+                    }
+                }
+            });
         }
 
         function changeMonth(delta) {
@@ -12272,9 +12546,19 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             if (document.getElementById('yearlyView').style.display !== 'none') {
                 renderYearlyStats();
             }
+            if (document.getElementById('quarterlyView').style.display !== 'none') {
+                renderQuarterlyStats();
+            }
             if (document.getElementById('analyticsView').style.display !== 'none') {
                 renderAnalytics();
             }
+        }
+
+        function changeYearFromQuarterly() {
+            currentYear = parseInt(document.getElementById('yearSelectQuarterly').value);
+            dashboardYear = currentYear;
+            syncAllYearSelectors();
+            renderQuarterlyStats();
         }
 
         function changeYearFromYearly() {
@@ -12300,7 +12584,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         function syncAllYearSelectors() {
             // Synchronizuj wszystkie selektory roku
-            const selectors = ['yearSelect', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
+            const selectors = ['yearSelect', 'yearSelectQuarterly', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
             selectors.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) {
@@ -12325,6 +12609,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             
             document.getElementById('dashboardView').style.display = 'none';
             document.getElementById('monthlyView').style.display = 'none';
+            document.getElementById('quarterlyView').style.display = 'none';
             document.getElementById('yearlyView').style.display = 'none';
             document.getElementById('analyticsView').style.display = 'none';
             
@@ -12334,6 +12619,9 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             } else if (view === 'monthly') {
                 document.getElementById('monthlyView').style.display = 'block';
                 renderCalendar();
+            } else if (view === 'quarterly') {
+                document.getElementById('quarterlyView').style.display = 'block';
+                renderQuarterlyStats();
             } else if (view === 'yearly') {
                 document.getElementById('yearlyView').style.display = 'block';
                 renderYearlyStats();
@@ -12528,7 +12816,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             const endYear = currentYearValue + 2; // +2 lata w przyszłość
 
             // Wypełnij wszystkie selektory roku
-            const selectors = ['yearSelect', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
+            const selectors = ['yearSelect', 'yearSelectQuarterly', 'yearSelectYearly', 'yearSelectAnalytics', 'yearSelectDashboard'];
             selectors.forEach(selectorId => {
                 const yearSelect = document.getElementById(selectorId);
                 if (!yearSelect) return;
@@ -12611,4 +12899,3 @@ function getMonthStatsComplete(year, month, maxDays = null) {
     </script>
 </body>
 </html>
-
