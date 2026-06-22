@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statystyki Produkcji Flexo PRO v1.9.1</title>
+    <title>Statystyki Produkcji Flexo PRO v1.9.2</title>
     <style>
         * {
             margin: 0;
@@ -1507,7 +1507,7 @@
             opacity: 1;
         }
 
-        /* Flexo PRO v1.9.1 visual upgrade */
+        /* Flexo PRO v1.9.2 visual upgrade */
         :root {
             --bg-primary: #070b10;
             --bg-secondary: #111821;
@@ -1957,7 +1957,7 @@
             box-shadow: var(--panel-shadow);
         }
 
-        /* v1.9.1 targeted fixes: preserve monthly semantics and icon clarity */
+        /* v1.9.2 targeted fixes: preserve monthly semantics and icon clarity */
         .calendar-table .kamil-cell,
         .calendar-table tbody tr:nth-child(even) td.kamil-cell,
         .calendar-table .today-row td.kamil-cell {
@@ -2051,6 +2051,53 @@
 
         #analyticsView .charts-grid + .stats-grid {
             margin-top: 2.5rem;
+        }
+
+        #analyticsView .shift-analysis-grid {
+            grid-template-columns: minmax(280px, 0.85fr) minmax(500px, 1.35fr);
+            align-items: stretch;
+        }
+
+        #analyticsView .shift-analysis-grid .analysis-card,
+        #analyticsView .shift-analysis-grid .chart-card {
+            margin-top: 0;
+            height: 100%;
+        }
+
+        #analyticsView .analytics-wide-card .chart-wrapper {
+            height: 360px;
+        }
+
+        #analyticsView .weekly-production-card .chart-wrapper {
+            height: 390px;
+        }
+
+        #analyticsView .analysis-card {
+            display: flex;
+            flex-direction: column;
+        }
+
+        #analyticsView .analysis-title {
+            min-height: 3.2rem;
+            margin-bottom: 1.25rem;
+            line-height: 1.35;
+        }
+
+        #analyticsView .analysis-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(145px, max-content);
+            align-items: start;
+            gap: 1rem;
+        }
+
+        #analyticsView .analysis-label {
+            line-height: 1.45;
+        }
+
+        #analyticsView .analysis-value {
+            text-align: right;
+            line-height: 1.45;
+            white-space: normal;
         }
 
         #analyticsView .tooltip-trigger {
@@ -2411,6 +2458,12 @@
         .transfer-code { width: 100%; min-height: 118px; resize: vertical; border-radius: 8px; border: 1px solid rgba(255, 210, 182, 0.20); background: rgba(0, 0, 0, 0.34); color: #f6f8fb; padding: 0.75rem; font-family: Consolas, "Courier New", monospace; font-size: 0.86rem; line-height: 1.45; }
         .transfer-summary { margin-top: 0.75rem; padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(62, 207, 142, 0.24); background: rgba(62, 207, 142, 0.08); color: #d8ffe9; line-height: 1.45; }
         .transfer-warning { margin-top: 0.75rem; color: #ffd166; font-size: 0.88rem; line-height: 1.45; }
+        .qr-scan-panel { display: none; margin-top: 0.85rem; padding: 0.85rem; border-radius: 8px; border: 1px solid rgba(83, 230, 189, 0.24); background: rgba(83, 230, 189, 0.07); }
+        .qr-scan-panel.active { display: block; }
+        .qr-scan-view { position: relative; overflow: hidden; border-radius: 8px; background: #050a10; border: 1px solid rgba(255, 255, 255, 0.12); aspect-ratio: 1 / 1; max-height: 360px; }
+        .qr-scan-view video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .qr-scan-reticle { position: absolute; inset: 12%; border: 2px solid rgba(83, 230, 189, 0.9); border-radius: 12px; box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.22); pointer-events: none; }
+        .qr-scan-status { margin-top: 0.65rem; color: #d8ffe9; font-size: 0.9rem; line-height: 1.4; }
 
         .calendar-table tr.just-saved {
             animation: savedRowPulse 1.45s ease;
@@ -2578,6 +2631,55 @@
             box-shadow: 0 0 0 3px rgba(255, 122, 61, 0.14), inset 0 1px 0 rgba(255,255,255,0.06);
         }
 
+        /* Przestoje + brak pomocnika — 2 ikony w stylu Sentrex (v1.9.2) */
+        .cell-ic { width: 1.02em; height: 1.02em; vertical-align: -0.16em; flex-shrink: 0; }
+        .production-entry-worker { gap: 0.5rem; flex-wrap: wrap; }
+        .cell-btns {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-left: 0.1rem;
+        }
+        .maint-btn, .helper-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: rgba(170, 184, 201, 0.5);
+            border-radius: 6px;
+            padding: 0.22rem 0.4rem;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.15s, background 0.15s, border-color 0.15s;
+        }
+        .maint-btn:hover:not([disabled]) { color: #f7c948; border-color: rgba(247, 201, 72, 0.4); }
+        .maint-btn.active { color: var(--maint-color, #f7c948); background: rgba(255, 255, 255, 0.05); border-color: var(--maint-color, #f7c948); }
+        .helper-btn:hover:not([disabled]) { color: #2dd4bf; border-color: rgba(45, 212, 191, 0.4); }
+        .helper-btn.active { color: #2dd4bf; background: rgba(45, 212, 191, 0.14); border-color: rgba(45, 212, 191, 0.5); }
+        .maint-btn[disabled], .helper-btn[disabled] { opacity: 0.3; cursor: default; }
+        .num-wrap { position: relative; width: 100%; }
+        .production-entry-row.maint input[type="number"] { border: 1px dashed var(--maint-color, #f7c948) !important; background: rgba(255, 255, 255, 0.03) !important; }
+        .production-entry-row.no-helper input[type="number"] { border-color: rgba(45, 212, 191, 0.55) !important; box-shadow: inset 0 -2px 0 rgba(45, 212, 191, 0.5) !important; }
+        .maint-tag {
+            position: absolute; inset: 0;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; padding: 0.2rem 0.65rem;
+            font-size: clamp(0.98rem, 2.2vw, 1.38rem);
+            line-height: 1; font-weight: 950; letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--maint-color, #f7c948); pointer-events: none; overflow: hidden;
+            text-shadow: 0 0 16px color-mix(in srgb, var(--maint-color, #f7c948) 42%, transparent);
+        }
+        .maint-tag.maint-tag-long {
+            font-size: clamp(0.72rem, 1.6vw, 0.94rem);
+            letter-spacing: 0.015em;
+        }
+        .maint-tag[hidden] { display: none; }
+        /* po wyborze przestoju: ukryj placeholder „Wpisz kg” — pole zajmuje duża etykieta typu */
+        .production-entry-row.maint input[type="number"] {
+            color: transparent !important;
+            caret-color: transparent !important;
+        }
+        .production-entry-row.maint input[type="number"]::placeholder { color: transparent !important; }
+
         .production-day-total {
             display: flex;
             justify-content: space-between;
@@ -2684,6 +2786,26 @@
                 margin-top: 1.5rem;
             }
 
+            #analyticsView .shift-analysis-grid {
+                grid-template-columns: 1fr;
+            }
+
+            #analyticsView .analytics-wide-card .chart-wrapper {
+                height: 320px;
+            }
+
+            #analyticsView .weekly-production-card .chart-wrapper {
+                height: 340px;
+            }
+
+            #analyticsView .analysis-title {
+                min-height: 0;
+            }
+
+            #analyticsView .analysis-item {
+                grid-template-columns: minmax(0, 1fr) minmax(115px, max-content);
+            }
+
             #analyticsView .tooltip-text {
                 left: 50%;
                 transform: translateX(-50%);
@@ -2727,6 +2849,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .qr-scan-view {
+                max-height: 300px;
+            }
+
             .production-entry-worker,
             .day-status-card {
                 align-items: stretch;
@@ -2748,7 +2874,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.1</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.2</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus" onclick="openSyncToolsModal()" title="Ukryty transfer danych aktualnego miesiąca">
                     <div class="sync-dot synced"></div>
@@ -2961,7 +3087,9 @@
                     </div>
                 </div>
                 
-                <div class="charts-grid">
+                <div class="charts-grid shift-analysis-grid">
+                    <div class="analysis-card" id="shiftEfficiencySummary"></div>
+
                     <div class="chart-card">
                         <div class="chart-header">
                             <div class="chart-title">📊 Średnia produkcja według zmiany (kg/wpis)</div>
@@ -2970,16 +3098,18 @@
                             <canvas id="shiftEfficiencyChart"></canvas>
                         </div>
                     </div>
-                    
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">📈 Trend miesięczny: obecny rok vs poprzedni (kg/mies.)</div>
-                        </div>
-                        <div class="chart-wrapper">
-                            <canvas id="yoyGrowthChart"></canvas>
-                        </div>
-                    </div>
+                </div>
 
+                <div class="chart-card analytics-wide-card">
+                    <div class="chart-header">
+                        <div class="chart-title">📈 Trend miesięczny: obecny rok vs poprzedni (kg/mies.)</div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="yoyGrowthChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
                     <div class="chart-card">
                         <div class="chart-header">
                             <div class="chart-title" id="averageRankingTitle">🎯 Ranking średniej pracowników (kg/dzień)</div>
@@ -3000,20 +3130,13 @@
                 </div>
 
                 <div class="charts-grid analytics-deep-grid">
-                    <div class="chart-card">
+                    <div class="chart-card analytics-wide-card weekly-production-card">
                         <div class="chart-header">
                             <div class="chart-title">📆 Produkcja tygodniowa w roku (kg/tydzień)</div>
                         </div>
                         <div class="chart-wrapper">
                             <canvas id="weeklyProductionChart"></canvas>
                         </div>
-                    </div>
-
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title">🧩 Kompletność danych produkcyjnych</div>
-                        </div>
-                        <div id="dataQualitySection"></div>
                     </div>
                 </div>
 
@@ -3045,22 +3168,6 @@
                         </div>
                         <div id="bestWeek"></div>
                     </div>
-                </div>
-
-                <!-- Spójność produkcji -->
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title tooltip-trigger">
-                            📉 Dni odstające od normy
-                            <span class="tooltip-icon">?</span>
-                            <div class="tooltip-text">
-                                <strong>Co to oznacza?</strong><br><br>
-                                Pokazuje dni, w których wynik pracownika mocno odbiegał od jego typowej średniej.<br><br>
-                                Dodatnie odchylenie oznacza dzień wyjątkowo mocny, a ujemne dzień wyraźnie słabszy.
-                            </div>
-                        </div>
-                    </div>
-                    <div id="consistencySection"></div>
                 </div>
 
                 <!-- Serie dni -->
@@ -3130,6 +3237,17 @@
                     <div class="button-group" style="margin-top: 0.75rem;">
                         <button class="btn btn-primary" type="button" onclick="importMonthTransfer()">Uzupełnij braki</button>
                         <button class="btn btn-secondary" type="button" onclick="previewMonthTransfer()">Sprawdź kod</button>
+                        <button class="btn btn-secondary" type="button" onclick="startMonthTransferQrScanner()">📷 Skanuj QR</button>
+                    </div>
+                    <div id="monthTransferQrScanner" class="qr-scan-panel">
+                        <div class="qr-scan-view">
+                            <video id="monthTransferQrVideo" playsinline muted></video>
+                            <div class="qr-scan-reticle"></div>
+                        </div>
+                        <div class="button-group" style="margin-top: 0.75rem;">
+                            <button class="btn btn-secondary" type="button" onclick="stopMonthTransferQrScanner()">Zatrzymaj skaner</button>
+                        </div>
+                        <div id="monthTransferQrStatus" class="qr-scan-status">Nakieruj aparat na kod QR z komputera.</div>
                     </div>
                     <div id="monthTransferImportSummary"></div>
                 </div>
@@ -3784,16 +3902,16 @@ var qrcode = function() {
       var y, x, r1, r2, p;
 
       var blocks = {
-        '██': '█',
-        '█ ': '▀',
-        ' █': '▄',
+        '--': '-',
+        '- ': '-',
+        ' -': '-',
         '  ': ' '
       };
 
       var blocksLastLineNoMargin = {
-        '██': '▀',
-        '█ ': '▀',
-        ' █': ' ',
+        '--': '-',
+        '- ': '-',
+        ' -': ' ',
         '  ': ' '
       };
 
@@ -3802,7 +3920,7 @@ var qrcode = function() {
         r1 = Math.floor((y - min) / cellSize);
         r2 = Math.floor((y + 1 - min) / cellSize);
         for (x = 0; x < size; x += 1) {
-          p = '█';
+          p = '-';
 
           if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
             p = ' ';
@@ -3812,7 +3930,7 @@ var qrcode = function() {
             p += ' ';
           }
           else {
-            p += '█';
+            p += '-';
           }
 
           // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
@@ -3823,7 +3941,7 @@ var qrcode = function() {
       }
 
       if (size % 2 && margin > 0) {
-        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('-');
       }
 
       return ascii.substring(0, ascii.length-1);
@@ -3845,7 +3963,7 @@ var qrcode = function() {
 
       var y, x, r, p;
 
-      var white = Array(cellSize+1).join('██');
+      var white = Array(cellSize+1).join('--');
       var black = Array(cellSize+1).join('  ');
 
       var ascii = '';
@@ -5992,6 +6110,23 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
             return customSchedule && customSchedule.isHoliday == true;
         }
 
+        function isCustomScheduleMeaningful(dayKey, dateArg = null) {
+            const customSchedule = getCustomSchedule(dayKey);
+            if (!customSchedule) return false;
+            if (customSchedule.isHoliday === true) return true;
+
+            const parsed = dateArg ? null : parseDayKey(dayKey);
+            const date = dateArg || (parsed ? new Date(parsed.year, parsed.month, parsed.day) : null);
+            if (!date || !customSchedule.workers) return true;
+
+            return WORKERS.some(worker => {
+                const savedShift = customSchedule.workers[worker] !== undefined
+                    ? Number(customSchedule.workers[worker])
+                    : getShift(worker, date);
+                return savedShift !== getShift(worker, date);
+            });
+        }
+
         function getShift(worker, date) {
             const startDate = CYCLE_START_DATES[worker];
             
@@ -6020,11 +6155,53 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         function setProductionData(data) {
             localStorage.setItem('productionData', JSON.stringify(data));
-            
+
             // Sync to Firebase
             if (isFirebaseInitialized) {
                 syncToFirebase('productionData', data);
             }
+        }
+
+        // ----- Przestoje + brak pomocnika (v1.9.2) -----
+        // Równoległe magazyny kluczowane jak produkcja: [dayKey][worker].
+        // Zmiana pracownika = ALBO produkcja (kg) ALBO przestój; brak pomocnika to flaga na zmianie z produkcją.
+        const MAINTENANCE_TYPES = {
+            remont: { label: 'Remont',        short: 'REMONT',        icon: 'wrench',   color: '#f7c948' },
+            awaria: { label: 'Awaria',        short: 'AWARIA',        icon: 'zap',      color: '#ff5c7a' },
+            serwis: { label: 'Serwis',        short: 'SERWIS',        icon: 'settings', color: '#c084fc' },
+            postoj: { label: 'Postój',        short: 'POSTÓJ',        icon: 'clock',    color: '#2dd4bf' },
+            brak:   { label: 'Brak drukarza', short: 'BRAK DRUKARZA', icon: 'users',    color: '#59a5ff' }
+        };
+        const MAINTENANCE_ORDER = ['remont', 'awaria', 'serwis', 'postoj', 'brak'];
+
+        // Ikony SVG dla 2 przycisków zmiany (przestój / bez pomocnika) — styl Sentrex
+        const _CELL_ICONS = {
+            wrench:   '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+            zap:      '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+            settings: '<line x1="3" y1="7" x2="6.5" y2="7"/><line x1="11.5" y1="7" x2="21" y2="7"/><circle cx="9" cy="7" r="2.5"/><line x1="3" y1="17" x2="12.5" y2="17"/><line x1="17.5" y1="17" x2="21" y2="17"/><circle cx="15" cy="17" r="2.5"/>',
+            clock:    '<circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/>',
+            users:    '<circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M16.8 14.6c2.5.4 4.2 2.3 4.2 5.4"/>',
+            helper:   '<circle cx="12" cy="7.5" r="3.3"/><path d="M5.5 20c0-3.6 2.9-6.2 6.5-6.2s6.5 2.6 6.5 6.2"/>'
+        };
+        function cellIcon(n) {
+            return '<svg class="cell-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (_CELL_ICONS[n] || '') + '</svg>';
+        }
+
+        function getMaintenanceData() {
+            const d = localStorage.getItem('maintenanceData');
+            return d ? JSON.parse(d) : {};
+        }
+        function setMaintenanceData(data) {
+            localStorage.setItem('maintenanceData', JSON.stringify(data));
+            if (isFirebaseInitialized) syncToFirebase('maintenanceData', data);
+        }
+        function getNoHelperData() {
+            const d = localStorage.getItem('noHelperData');
+            return d ? JSON.parse(d) : {};
+        }
+        function setNoHelperData(data) {
+            localStorage.setItem('noHelperData', JSON.stringify(data));
+            if (isFirebaseInitialized) syncToFirebase('noHelperData', data);
         }
 
         // Firebase Sync Functions
@@ -6095,6 +6272,16 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                     console.log('✅ Monthly goal loaded from Firebase');
                 }
             });
+
+            // Load maintenance + no-helper (v1.9.2)
+            database.ref('maintenanceData').once('value', (snapshot) => {
+                const v = snapshot.val();
+                if (v) localStorage.setItem('maintenanceData', JSON.stringify(v));
+            });
+            database.ref('noHelperData').once('value', (snapshot) => {
+                const v = snapshot.val();
+                if (v) localStorage.setItem('noHelperData', JSON.stringify(v));
+            });
         }
 
         function setupFirebaseListeners() {
@@ -6146,6 +6333,30 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                     }
                 }
             });
+
+            // Listen for maintenance + no-helper changes (v1.9.2)
+            const refreshAfterSync = () => {
+                if (currentView === 'dashboard') renderDashboard();
+                else if (currentView === 'monthly') renderCalendar();
+                else if (currentView === 'yearly') renderYearlyStats();
+                else if (currentView === 'analytics') renderAnalytics();
+            };
+            database.ref('maintenanceData').on('value', (snapshot) => {
+                const v = snapshot.val() || {};
+                if (JSON.stringify(getMaintenanceData()) !== JSON.stringify(v)) {
+                    localStorage.setItem('maintenanceData', JSON.stringify(v));
+                    console.log('🔄 Maintenance updated from Firebase');
+                    refreshAfterSync();
+                }
+            });
+            database.ref('noHelperData').on('value', (snapshot) => {
+                const v = snapshot.val() || {};
+                if (JSON.stringify(getNoHelperData()) !== JSON.stringify(v)) {
+                    localStorage.setItem('noHelperData', JSON.stringify(v));
+                    console.log('🔄 No-helper updated from Firebase');
+                    refreshAfterSync();
+                }
+            });
         }
 
         function updateSyncStatus(status, text) {
@@ -6159,6 +6370,21 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         }
 
         function setCustomSchedule(dayKey, schedule) {
+            if (schedule && schedule.isHoliday !== true) {
+                const parsed = parseDayKey(dayKey);
+                const date = parsed ? new Date(parsed.year, parsed.month, parsed.day) : null;
+                const matchesDefault = date && WORKERS.every(worker => {
+                    const savedShift = schedule.workers && schedule.workers[worker] !== undefined
+                        ? Number(schedule.workers[worker])
+                        : getShift(worker, date);
+                    return savedShift === getShift(worker, date);
+                });
+                if (matchesDefault) {
+                    deleteCustomSchedule(dayKey);
+                    return;
+                }
+            }
+
             const customSchedules = JSON.parse(localStorage.getItem('customSchedules') || '{}');
             customSchedules[dayKey] = schedule;
             localStorage.setItem('customSchedules', JSON.stringify(customSchedules));
@@ -6268,8 +6494,154 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         }
 
         function closeSyncToolsModal() {
+            stopMonthTransferQrScanner();
             const modal = document.getElementById('syncToolsModal');
             if (modal) modal.classList.remove('active');
+        }
+
+        let monthTransferQrStream = null;
+        let monthTransferQrFrameId = null;
+        let monthTransferQrDetector = null;
+        let monthTransferQrCanvas = null;
+        let monthTransferQrStatusAt = 0;
+
+        function setMonthTransferQrStatus(message, isWarning = false) {
+            const status = document.getElementById('monthTransferQrStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isWarning ? '#ffd166' : '#d8ffe9';
+        }
+
+        function loadJsQrLibrary() {
+            if (window.jsQR) return Promise.resolve();
+            if (window.__flexoJsQrLoading) return window.__flexoJsQrLoading;
+            window.__flexoJsQrLoading = new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+                script.async = true;
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Nie udało się pobrać czytnika QR z internetu'));
+                document.head.appendChild(script);
+            });
+            return window.__flexoJsQrLoading;
+        }
+
+        async function startMonthTransferQrScanner() {
+            const panel = document.getElementById('monthTransferQrScanner');
+            const video = document.getElementById('monthTransferQrVideo');
+            if (!panel || !video) return;
+
+            if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                setMonthTransferQrStatus('Aparat działa tylko na HTTPS. GitHub Pages jest OK, ale zwykły HTTP może blokować kamerę.', true);
+                panel.classList.add('active');
+                return;
+            }
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                setMonthTransferQrStatus('Ta przeglądarka nie udostępnia aparatu dla strony.', true);
+                panel.classList.add('active');
+                return;
+            }
+
+            stopMonthTransferQrScanner();
+            panel.classList.add('active');
+            setMonthTransferQrStatus('Uruchamiam aparat...');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: false
+                });
+                monthTransferQrStream = stream;
+                video.srcObject = stream;
+                await video.play();
+
+                monthTransferQrDetector = null;
+                if ('BarcodeDetector' in window) {
+                    try {
+                        const formats = await BarcodeDetector.getSupportedFormats();
+                        if (formats.includes('qr_code')) {
+                            monthTransferQrDetector = new BarcodeDetector({ formats: ['qr_code'] });
+                        }
+                    } catch (error) {
+                        monthTransferQrDetector = null;
+                    }
+                }
+                if (!monthTransferQrDetector) {
+                    await loadJsQrLibrary();
+                }
+
+                setMonthTransferQrStatus('Skanuję... nakieruj aparat na QR z komputera.');
+                scanMonthTransferQrFrame();
+            } catch (error) {
+                stopMonthTransferQrScanner();
+                panel.classList.add('active');
+                setMonthTransferQrStatus('Nie mogę uruchomić aparatu: ' + (error && error.message ? error.message : error), true);
+            }
+        }
+
+        function stopMonthTransferQrScanner() {
+            if (monthTransferQrFrameId) {
+                cancelAnimationFrame(monthTransferQrFrameId);
+                monthTransferQrFrameId = null;
+            }
+            if (monthTransferQrStream) {
+                monthTransferQrStream.getTracks().forEach(track => track.stop());
+                monthTransferQrStream = null;
+            }
+            const video = document.getElementById('monthTransferQrVideo');
+            if (video) video.srcObject = null;
+            const panel = document.getElementById('monthTransferQrScanner');
+            if (panel) panel.classList.remove('active');
+        }
+
+        function acceptMonthTransferQrResult(rawValue) {
+            const input = document.getElementById('monthTransferInput');
+            if (!input) return;
+            input.value = rawValue;
+            stopMonthTransferQrScanner();
+            const payload = previewMonthTransfer();
+            if (payload) showToast('📷 Kod QR odczytany. Sprawdź podsumowanie i kliknij import.');
+            else showToast('⚠️ QR odczytany, ale to nie wygląda jak kod transferu');
+        }
+
+        async function scanMonthTransferQrFrame() {
+            const video = document.getElementById('monthTransferQrVideo');
+            if (!video || !monthTransferQrStream) return;
+
+            try {
+                if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
+                    if (monthTransferQrDetector) {
+                        const codes = await monthTransferQrDetector.detect(video);
+                        if (codes && codes.length && codes[0].rawValue) {
+                            acceptMonthTransferQrResult(codes[0].rawValue);
+                            return;
+                        }
+                    } else if (window.jsQR) {
+                        if (!monthTransferQrCanvas) monthTransferQrCanvas = document.createElement('canvas');
+                        const canvas = monthTransferQrCanvas;
+                        const maxWidth = 900;
+                        const scale = Math.min(1, maxWidth / video.videoWidth);
+                        canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+                        canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+                        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                        if (code && code.data) {
+                            acceptMonthTransferQrResult(code.data);
+                            return;
+                        }
+                    }
+                }
+            } catch (error) {
+                const now = Date.now();
+                if (now - monthTransferQrStatusAt > 1800) {
+                    monthTransferQrStatusAt = now;
+                    setMonthTransferQrStatus('Skanuję dalej... jeśli obraz jest rozmazany, odsuń telefon od monitora.', true);
+                }
+            }
+
+            monthTransferQrFrameId = requestAnimationFrame(scanMonthTransferQrFrame);
         }
 
         function generateMonthTransfer() {
@@ -6498,7 +6870,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
                         📄 Generuj PDF
                     </button>
                     <button class="btn btn-secondary" onclick="closeModal()">
-                        ❌ Anuluj
+                        ? Anuluj
                     </button>
                 </div>
             `;
@@ -7168,9 +7540,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
          // Dodaj nową funkcję pomocniczą do sprawdzania czy dzień jest pełny
 function isDayComplete(year, month, day) {
     const data = getProductionData();
+    const maintenanceData = getMaintenanceData();
     const date = new Date(year, month, day);
     const dayKey = getDayKey(year, month, day);
     const dayData = data[dayKey] || {};
+    const dayMaint = maintenanceData[dayKey] || {};
     
     // Jeśli święto, nie jest to "pełny dzień" do statystyk
     if (isDayHoliday(dayKey)) {
@@ -7184,7 +7558,7 @@ function isDayComplete(year, month, day) {
         const shift = getShiftForDay(worker, date);
         if (shift !== 0) {
             workersExpected++;
-            if (dayData[worker] !== undefined) {
+            if (dayData[worker] !== undefined || dayMaint[worker]) {
                 workersReported++;
             }
         }
@@ -8033,7 +8407,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
     // Zaktualizuj tytuł
     const titleElement = document.getElementById('dashboardPodiumTitle');
     if (titleElement) {
-        titleElement.textContent = isCurrentMonth ?
+        titleElement.innerHTML = isCurrentMonth ?
             '🏆 Top Performers - Bieżący miesiąc' :
             `🏆 Top Performers - ${MONTHS[dashboardMonth]} ${dashboardYear}`;
     }
@@ -8397,6 +8771,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
         function renderAnalysisCards() {
             const data = getProductionData();
+            const maintenanceData = getMaintenanceData();
             const today = new Date();
             
             // Analiza efektywności według zmian
@@ -8434,16 +8809,62 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             
             // Momentum produkcji (ostatnie 7 dni vs poprzednie 7 dni)
             const momentumData = calculateMomentum();
-            
+
+            // Przestoje wg typu + analiza pomocnika (wybrany rok) — v1.9.2
+            const maintDataA = getMaintenanceData();
+            const noHelpDataA = getNoHelperData();
+            const maintCounts = {}; MAINTENANCE_ORDER.forEach(t => maintCounts[t] = 0);
+            let maintTotal = 0;
+            Object.keys(maintDataA).forEach(dk => {
+                if (Number(dk.slice(0, 4)) !== currentYear) return;
+                Object.values(maintDataA[dk]).forEach(t => { if (maintCounts[t] !== undefined) { maintCounts[t]++; maintTotal++; } });
+            });
+            const maintItems = MAINTENANCE_ORDER.map(t => ({
+                label: MAINTENANCE_TYPES[t].label,
+                value: maintCounts[t] + (maintTotal ? ` (${(maintCounts[t] / maintTotal * 100).toFixed(0)}%)` : '')
+            }));
+            maintItems.push({ label: 'Razem zmian przestoju', value: String(maintTotal) });
+
+            let hWithSum = 0, hWithCnt = 0, hWoSum = 0, hWoCnt = 0;
+            Object.keys(data).forEach(dk => {
+                if (Number(dk.slice(0, 4)) !== currentYear) return;
+                const dd = data[dk]; const nh = noHelpDataA[dk] || {};
+                WORKERS.forEach(worker => {
+                    const v = dd[worker];
+                    if (v && v > 0) {
+                        if (nh[worker]) { hWoSum += v; hWoCnt++; }
+                        else { hWithSum += v; hWithCnt++; }
+                    }
+                });
+            });
+            const helperItems = [
+                { label: 'Z pomocnikiem (śr./zmianę)', value: hWithCnt ? (hWithSum / hWithCnt).toFixed(0) + ' kg (' + hWithCnt + ' zm.)' : 'brak danych' },
+                { label: 'Bez pomocnika (śr./zmianę)', value: hWoCnt ? (hWoSum / hWoCnt).toFixed(0) + ' kg (' + hWoCnt + ' zm.)' : 'brak danych' }
+            ];
+            if (hWithCnt && hWoCnt) {
+                const diff = ((hWoSum / hWoCnt) - (hWithSum / hWithCnt)) / (hWithSum / hWithCnt) * 100;
+                helperItems.push({ label: 'Różnica (bez vs z)', value: (diff >= 0 ? '+' : '') + diff.toFixed(1) + '%' });
+            }
+
+            const shiftEfficiencyItems = [
+                { label: 'Rano (6-14)', value: `${shiftAvgs[1]} kg/dzień` },
+                { label: 'Popołudnie (14-22)', value: `${shiftAvgs[2]} kg/dzień` },
+                { label: 'Noc (22-6)', value: `${shiftAvgs[3]} kg/dzień` }
+            ];
+            const shiftSummaryEl = document.getElementById('shiftEfficiencySummary');
+            if (shiftSummaryEl) {
+                shiftSummaryEl.innerHTML = `
+                    <div class="analysis-title">🌅 Efektywność według zmian</div>
+                    ${shiftEfficiencyItems.map(item => `
+                        <div class="analysis-item">
+                            <span class="analysis-label">${item.label}</span>
+                            <span class="analysis-value">${item.value}</span>
+                        </div>
+                    `).join('')}
+                `;
+            }
+
             const cards = [
-                {
-                    title: '🌅 Efektywność według zmian',
-                    items: [
-                        { label: 'Rano (6-14)', value: `${shiftAvgs[1]} kg/dzień` },
-                        { label: 'Popołudnie (14-22)', value: `${shiftAvgs[2]} kg/dzień` },
-                        { label: 'Noc (22-6)', value: `${shiftAvgs[3]} kg/dzień` }
-                    ]
-                },
                 {
                     title: '📈 Momentum produkcji (trend 7vs7 dni)',
                     items: momentumData.items
@@ -8451,6 +8872,14 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 {
                     title: '📊 Trendy roczne',
                     items: calculateYearlyTrends()
+                },
+                {
+                    title: '🔧 Przestoje wg typu',
+                    items: maintItems
+                },
+                {
+                    title: '🤝 Produkcja: z pomocnikiem vs bez',
+                    items: helperItems
                 }
             ];
             
@@ -8631,16 +9060,16 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     trendClass = 'trend-stable';
                 } else if (changePercent < 0) {
                     trend = 'STABILNY (lekki spadek) →';
-                    trendIcon = '⚠️';
+                    trendIcon = '✅';
                     trendClass = 'trend-stable';
                 } else {
                     trend = 'BEZ ZMIAN →';
-                    trendIcon = '➡️';
+                    trendIcon = '⚠️';
                     trendClass = 'trend-stable';
                 }
             } else {
                 trend = 'Brak danych z poprzedniego okresu';
-                trendIcon = '❓';
+                trendIcon = '✅';
                 trendClass = '';
             }
             
@@ -8828,7 +9257,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             // Zaktualizuj tytuł z aktualnym rokiem
             const titleEl = document.getElementById('averageRankingTitle');
             if (titleEl) {
-                titleEl.textContent = `🎯 Ranking według średniej (${currentYear})`;
+                titleEl.innerHTML = `🎯 Ranking według średniej (${currentYear})`;
             }
 
             if (averageRankingChart) {
@@ -8963,7 +9392,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             // Zaktualizuj tytuł z aktualnym rokiem
             const titleEl = document.getElementById('distributionTitle');
             if (titleEl) {
-                titleEl.textContent = `📊 Rozkład produkcji (${currentYear})`;
+                titleEl.innerHTML = `📊 Rozkład produkcji (${currentYear})`;
             }
 
             if (distributionChart) {
@@ -9428,7 +9857,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             // Zaktualizuj tytuł z bieżącym rokiem
             const titleEl = quartersEl.closest('.chart-card').querySelector('.chart-title');
             if (titleEl) {
-                titleEl.textContent = `📈 Porównanie Kwartałów ${currentYear}`;
+                titleEl.innerHTML = `📈 Porównanie Kwartałów ${currentYear}`;
             }
 
             const data = getProductionData();
@@ -9496,6 +9925,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
         function renderCalendar() {
             const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
             const data = getProductionData();
+            const maintData = getMaintenanceData();
+            const noHelpData = getNoHelperData();
             const today = new Date();
             const isCurrentMonth = today.getMonth() === currentMonth && today.getFullYear() === currentYear;
             const todayDay = today.getDate();
@@ -9507,6 +9938,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 const date = new Date(currentYear, currentMonth, day);
                 const dayKey = getDayKey(currentYear, currentMonth, day);
                 const dayData = data[dayKey] || {};
+                const dayMaint = getMaintenanceData()[dayKey] || {};
                 
                 let workingCount = 0;
                 let dataCount = 0;
@@ -9515,7 +9947,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     const shift = getShiftForDay(worker, date);
                     if (shift !== 0) {
                         workingCount++;
-                        if (dayData[worker] !== undefined) {
+                        if (dayData[worker] !== undefined || dayMaint[worker]) {
                             dataCount++;
                         }
                     }
@@ -9574,12 +10006,13 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 const date = new Date(currentYear, currentMonth, day);
                 const dayKey = getDayKey(currentYear, currentMonth, day);
                 const dayData = data[dayKey] || {};
+                const dayMaint = getMaintenanceData()[dayKey] || {};
                 
                 const dayNames = ['N', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So'];
                 const dayName = dayNames[date.getDay()];
                 
                 const isTodayRow = isCurrentMonth && day === todayDay ? 'today-row' : '';
-                const hasCustomSchedule = getCustomSchedule(dayKey) !== null;
+                const hasCustomSchedule = isCustomScheduleMeaningful(dayKey, date);
                 
                 let workingCount = 0;
                 let dataCount = 0;
@@ -9587,7 +10020,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     const shift = getShiftForDay(worker, date);
                     if (shift !== 0) {
                         workingCount++;
-                        if (dayData[worker] !== undefined) dataCount++;
+                        if (dayData[worker] !== undefined || dayMaint[worker]) dataCount++;
                     }
                 });
                 
@@ -9600,7 +10033,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     } else if (dataCount > 0) {
                         dayIndicator = ' <span class="day-indicator day-incomplete">❗</span>';
                     } else if (dataCount === 0) {
-                        dayIndicator = ' <span class="day-indicator day-incomplete">❌</span>';
+                        dayIndicator = ' <span class="day-indicator day-incomplete">❗</span>';
                     }
                 }
                 
@@ -9627,12 +10060,20 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                     const value = dayData[worker] !== undefined ? dayData[worker] : '';
                     const shiftClass = shift === 0 ? 'shift-free' : `shift-${shift}`;
                     const shiftText = shift === 1 ? '☀️' : shift === 2 ? '🌆' : shift === 3 ? '🌙' : '💤';
-                    
+
                     const cellClass = shift === 0 ? 'free-day-cell' : `${worker.toLowerCase()}-cell`;
-                    
+                    const mt = (maintData[dayKey] || {})[worker];
+                    const noh = (noHelpData[dayKey] || {})[worker];
+                    let valHtml;
+                    if (mt && MAINTENANCE_TYPES[mt]) {
+                        valHtml = `<span style="font-weight:700;font-size:0.82rem;color:${MAINTENANCE_TYPES[mt].color}" title="Przestój">${MAINTENANCE_TYPES[mt].label}</span>`;
+                    } else {
+                        valHtml = (value !== '' ? value + ' kg' : '-') + (noh ? ' <span title="Bez pomocnika" style="color:#f59e0b;font-weight:800">∅</span>' : '');
+                    }
+
                     html += `<td class="${cellClass}">
                         <div class="${shiftClass}">${shiftText}</div>
-                        <div class="production-value">${value !== '' ? value + ' kg' : '-'}</div>
+                        <div class="production-value">${valHtml}</div>
                     </td>`;
                 });
                 
@@ -9824,7 +10265,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             }
             
             setCustomSchedule(dayKey, schedule);
-            showToast('⚙️ Harmonogram zapisany!');
+            showToast('✅ Harmonogram zapisany!');
             renderProductionModal();
             renderCalendar();
         }
@@ -10123,7 +10564,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             const ctx = document.getElementById('averageRankingChart');
             if (!ctx) return;
             const titleEl = document.getElementById('averageRankingTitle');
-            if (titleEl) titleEl.textContent = `🎯 Ranking średniej pracowników (${currentYear}, kg/dzień)`;
+            if (titleEl) titleEl.innerHTML = `🎯 Ranking średniej pracowników (${currentYear}, kg/dzień)`;
             if (averageRankingChart) averageRankingChart.destroy();
 
             const data = getProductionData();
@@ -10204,7 +10645,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             const ctx = document.getElementById('distributionChart');
             if (!ctx) return;
             const titleEl = document.getElementById('distributionTitle');
-            if (titleEl) titleEl.textContent = `🍩 Udział pracowników w produkcji rocznej (${currentYear})`;
+            if (titleEl) titleEl.innerHTML = `🍩 Udział pracowników w produkcji rocznej (${currentYear})`;
             if (distributionChart) distributionChart.destroy();
 
             const data = getProductionData();
@@ -10306,6 +10747,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             if (!section) return;
 
             const data = getProductionData();
+            const maintenanceData = getMaintenanceData();
             const today = new Date();
             const maxDate = currentYear === today.getFullYear() ? today : new Date(currentYear, 11, 31);
             const stats = { complete: 0, partial: 0, empty: 0, holiday: 0 };
@@ -10321,12 +10763,13 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         continue;
                     }
                     const dayData = data[dayKey] || {};
+                    const dayMaint = maintenanceData[dayKey] || {};
                     let expected = 0;
                     let reported = 0;
                     WORKERS.forEach(worker => {
                         if (getShiftForDay(worker, date) !== 0) {
                             expected += 1;
-                            if (dayData[worker] !== undefined) reported += 1;
+                            if (dayData[worker] !== undefined || dayMaint[worker]) reported += 1;
                         }
                     });
                     if (expected === 0) stats.holiday += 1;
@@ -10433,15 +10876,69 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 : `<div class="quality-tile"><div class="quality-value">Brak mocnych odchyleń</div><div class="quality-note">W ${currentYear} nie ma dni wyraźnie odstających od typowych wyników pracowników.</div></div>`;
         }
 
+        // Klik cyklicznie przełącza typy przestoju: brak → remont → awaria → serwis → postój → brak drukarza → brak (v1.9.2)
+        function cycleMaint(worker) {
+            const hidden = document.getElementById('maint-' + worker);
+            const btn = document.getElementById('maintbtn-' + worker);
+            if (!hidden || !btn || btn.disabled) return;
+            const cur = hidden.value;
+            const idx = cur ? MAINTENANCE_ORDER.indexOf(cur) : -1;
+            const next = idx + 1 < MAINTENANCE_ORDER.length ? MAINTENANCE_ORDER[idx + 1] : '';
+            hidden.value = next;
+            const mt = next ? MAINTENANCE_TYPES[next] : null;
+            const row = btn.closest('.production-entry-row');
+            const input = document.getElementById('input-' + worker);
+            const tag = row.querySelector('.maint-tag');
+            const nohBtn = document.getElementById('nohelperbtn-' + worker);
+            const nohHidden = document.getElementById('nohelper-' + worker);
+            if (mt) {
+                row.classList.add('maint');
+                row.classList.remove('no-helper');
+                row.style.setProperty('--maint-color', mt.color);
+                btn.classList.add('active');
+                btn.innerHTML = cellIcon(mt.icon);
+                btn.title = 'Przestój: ' + mt.label + ' — kliknij, by zmienić typ';
+                if (input) { input.value = ''; input.placeholder = ''; input.disabled = true; }
+                if (tag) { tag.textContent = mt.short; tag.classList.toggle('maint-tag-long', next === 'brak'); tag.hidden = false; }
+                if (nohHidden) nohHidden.value = '';            // przestój = maszyna stoi → „bez pomocnika” bez sensu
+                if (nohBtn) { nohBtn.classList.remove('active'); nohBtn.disabled = true; }
+            } else {
+                row.classList.remove('maint');
+                row.style.removeProperty('--maint-color');
+                btn.classList.remove('active');
+                btn.innerHTML = cellIcon('wrench');
+                btn.title = 'Oznacz przestój maszyny — kliknij, by przełączać typy';
+                if (input) { input.disabled = false; input.placeholder = 'Wpisz kg'; }
+                if (tag) { tag.hidden = true; tag.textContent = ''; tag.classList.remove('maint-tag-long'); }
+                if (nohBtn) nohBtn.disabled = false;
+            }
+            updateModalDayTotal();
+        }
+
+        // „Bez pomocnika” — flaga, NIE blokuje wpisywania produkcji (v1.9.2)
+        function toggleHelper(worker) {
+            const btn = document.getElementById('nohelperbtn-' + worker);
+            const hidden = document.getElementById('nohelper-' + worker);
+            if (!btn || btn.disabled || !hidden) return;
+            const on = hidden.value !== '1';
+            hidden.value = on ? '1' : '';
+            const row = btn.closest('.production-entry-row');
+            if (row) row.classList.toggle('no-helper', on);
+            btn.classList.toggle('active', on);
+            btn.title = on ? 'Zmiana BEZ pomocnika — kliknij, by odznaczyć' : 'Oznacz zmianę BEZ pomocnika (produkcję nadal wpisujesz)';
+        }
+
         function renderProductionModalEnhanced() {
             const date = new Date(currentYear, currentMonth, selectedDay);
             const dayKey = getDayKey(currentYear, currentMonth, selectedDay);
             const data = getProductionData();
             const dayData = data[dayKey] || {};
             const isHoliday = isDayHoliday(dayKey);
+            const dayMaint = (getMaintenanceData()[dayKey]) || {};
+            const dayNoHelp = (getNoHelperData()[dayKey]) || {};
 
             document.getElementById('modalTitle').innerHTML = `
-                <span>📥 Produkcja - ${selectedDay} ${MONTHS[currentMonth]} ${currentYear}</span>
+                <span>📝 Produkcja - ${selectedDay} ${MONTHS[currentMonth]} ${currentYear}</span>
                 <button class="edit-schedule-btn ${editMode ? 'active' : ''}" onclick="toggleEditMode()">
                     ⚙️ Harmonogram
                 </button>
@@ -10470,21 +10967,38 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                                  shift === 2 ? '🌆 Popołudnie (14-22)' :
                                  shift === 3 ? '🌙 Noc (22-6)' : '💤 Wolne';
                 const value = dayData[worker] !== undefined ? dayData[worker] : '';
+                const mVal = dayMaint[worker] || '';
+                const noHelp = !!dayNoHelp[worker];
+                const blocked = shift === 0 || isHoliday;
 
                 if (shift === 0 && !editMode) {
                     return;
                 }
 
+                const mt = mVal ? MAINTENANCE_TYPES[mVal] : null;
                 html += `
-                    <div class="production-entry-row ${shift === 0 ? 'is-free' : ''}">
+                    <div class="production-entry-row ${shift === 0 ? 'is-free' : ''}${mt ? ' maint' : ''}${noHelp && !mt ? ' no-helper' : ''}" ${mt ? `style="--maint-color:${mt.color}"` : ''}>
                         <div class="production-entry-worker">
                             <div class="worker-label ${worker.toLowerCase()}-label">${worker}</div>
                             <div class="shift-indicator">${shiftText}</div>
+                            <span class="cell-btns" ${shift === 0 ? 'style="display:none"' : ''}>
+                                <input type="hidden" id="maint-${worker}" value="${mVal}" ${blocked ? 'disabled' : ''}>
+                                <input type="hidden" id="nohelper-${worker}" value="${noHelp && !mt ? '1' : ''}" ${blocked ? 'disabled' : ''}>
+                                <button type="button" class="maint-btn ${mt ? 'active' : ''}" id="maintbtn-${worker}"
+                                        title="${mt ? 'Przestój: ' + mt.label + ' — kliknij, by zmienić typ' : 'Oznacz przestój maszyny — kliknij, by przełączać typy'}"
+                                        onclick="cycleMaint('${worker}')" ${blocked ? 'disabled' : ''}>${cellIcon(mt ? mt.icon : 'wrench')}</button>
+                                <button type="button" class="helper-btn ${noHelp && !mt ? 'active' : ''}" id="nohelperbtn-${worker}"
+                                        title="${noHelp && !mt ? 'Zmiana BEZ pomocnika — kliknij, by odznaczyć' : 'Oznacz zmianę BEZ pomocnika (produkcję nadal wpisujesz)'}"
+                                        onclick="toggleHelper('${worker}')" ${blocked || mt ? 'disabled' : ''}>${cellIcon('helper')}</button>
+                            </span>
                         </div>
-                        <input type="number" id="input-${worker}" value="${value}"
-                               placeholder="Wpisz kg" ${shift === 0 || isHoliday ? 'disabled' : ''}
-                               min="0" step="0.1" inputmode="decimal"
-                               oninput="updateModalDayTotal()" onkeydown="handleModalKeydown(event)">
+                        <div class="num-wrap">
+                            <input type="number" id="input-${worker}" value="${mt ? '' : value}"
+                                   placeholder="${mt ? '' : 'Wpisz kg'}" ${blocked || mt ? 'disabled' : ''}
+                                   min="0" step="0.1" inputmode="decimal"
+                                   oninput="updateModalDayTotal()" onkeydown="handleModalKeydown(event)">
+                            <span class="maint-tag${mVal === 'brak' ? ' maint-tag-long' : ''}" ${mt ? '' : 'hidden'}>${mt ? mt.short : ''}</span>
+                        </div>
                     </div>
                 `;
             });
@@ -10528,8 +11042,11 @@ function getMonthStatsComplete(year, month, maxDays = null) {
 
                 html += `
                         </div>
-                        <button class="btn" style="width: 100%;" onclick="saveSchedule()">
+                        <button class="btn" style="width: 100%; margin-bottom: 0.5rem;" onclick="saveSchedule()">
                             ⚙️ Zapisz harmonogram
+                        </button>
+                        <button class="reset-schedule-btn" onclick="resetScheduleToDefault()">
+                            🔄 Przywróć domyślny harmonogram
                         </button>
                     </div>
                 `;
@@ -10575,8 +11092,19 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             if (statusCard) statusCard.classList.toggle('holiday', isHoliday);
             if (statusTitle) statusTitle.textContent = isHoliday ? 'Dzień wolny od pracy' : 'Dzień produkcyjny';
 
-            document.querySelectorAll('#modalBody .production-entry-row input[type="number"]').forEach(input => {
-                input.disabled = isHoliday || input.closest('.production-entry-row').classList.contains('is-free');
+            document.querySelectorAll('#modalBody .production-entry-row').forEach(row => {
+                const input = row.querySelector('input[type="number"]');
+                const maintHidden = row.querySelector('input[id^="maint-"]');
+                const nohHidden = row.querySelector('input[id^="nohelper-"]');
+                const maintBtn = row.querySelector('.maint-btn');
+                const nohBtn = row.querySelector('.helper-btn');
+                const isFree = row.classList.contains('is-free');
+                const hasMaint = maintHidden && maintHidden.value !== '';
+                if (input) input.disabled = isHoliday || isFree || hasMaint;
+                if (maintHidden) maintHidden.disabled = isHoliday || isFree;
+                if (nohHidden) nohHidden.disabled = isHoliday || isFree;
+                if (maintBtn) maintBtn.disabled = isHoliday || isFree;
+                if (nohBtn) nohBtn.disabled = isHoliday || isFree || hasMaint;
             });
 
             WORKERS.forEach(worker => {
@@ -10623,7 +11151,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             });
 
             setCustomSchedule(dayKey, schedule);
-            showToast('⚙️ Harmonogram zapisany!');
+            showToast('✅ Harmonogram zapisany!');
             renderProductionModal();
             renderCalendar();
         }
@@ -10677,6 +11205,8 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                 setCustomSchedule(dayKey, schedule);
                 delete data[dayKey];
                 setProductionData(data);
+                const mdH = getMaintenanceData(); if (mdH[dayKey]) { delete mdH[dayKey]; setMaintenanceData(mdH); }
+                const ndH = getNoHelperData(); if (ndH[dayKey]) { delete ndH[dayKey]; setNoHelperData(ndH); }
                 showToast('✅ Dzień wolny zapisany!');
                 closeModal();
                 if (currentView === 'dashboard') {
@@ -10731,6 +11261,29 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             });
 
             if (hasInvalidValue) return;
+
+            // ---- przestoje + brak pomocnika (v1.9.2) ----
+            const maintData = getMaintenanceData();
+            const noHelpData = getNoHelperData();
+            if (!maintData[dayKey]) maintData[dayKey] = {};
+            if (!noHelpData[dayKey]) noHelpData[dayKey] = {};
+            WORKERS.forEach(worker => {
+                const sel = document.getElementById(`maint-${worker}`);
+                const noh = document.getElementById(`nohelper-${worker}`);
+                if (sel && !sel.disabled && sel.value) {
+                    maintData[dayKey][worker] = sel.value;   // przestój wyklucza produkcję
+                    delete data[dayKey][worker];
+                    delete noHelpData[dayKey][worker];
+                } else if (sel) {
+                    delete maintData[dayKey][worker];
+                    if (noh && !noh.disabled && noh.value === '1') noHelpData[dayKey][worker] = true;
+                    else delete noHelpData[dayKey][worker];
+                }
+            });
+            if (Object.keys(maintData[dayKey]).length === 0) delete maintData[dayKey];
+            if (Object.keys(noHelpData[dayKey]).length === 0) delete noHelpData[dayKey];
+            setMaintenanceData(maintData);
+            setNoHelperData(noHelpData);
 
             if (Object.keys(data[dayKey]).length === 0) {
                 delete data[dayKey];
@@ -10957,31 +11510,31 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             
             if (percent >= 10) {
                 return {
-                    icon: '↗️',
+                    icon: '↗',
                     text: `+${diff.toFixed(1)} kg (+${percent}%)`,
                     class: 'trend-up'
                 };
             } else if (percent <= -10) {
                 return {
-                    icon: '↘️',
+                    icon: '↘',
                     text: `${diff.toFixed(1)} kg (${percent}%)`,
                     class: 'trend-down'
                 };
             } else if (percent > 0) {
                 return {
-                    icon: '↗️',
+                    icon: '→',
                     text: `+${diff.toFixed(1)} kg (+${percent}%)`,
                     class: 'trend-stable'
                 };
             } else if (percent < 0) {
                 return {
-                    icon: '↘️',
+                    icon: '→',
                     text: `${diff.toFixed(1)} kg (${percent}%)`,
                     class: 'trend-stable'
                 };
             } else {
                 return {
-                    icon: '➡️',
+                    icon: '→',
                     text: `${diff.toFixed(1)} kg (${percent}%)`,
                     class: 'trend-stable'
                 };
@@ -11837,7 +12390,7 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         button.type = 'button';
                         button.className = 'chart-focus-btn';
                         button.title = 'Powiększ wykres';
-                        button.textContent = '⛶';
+                        button.textContent = '✓';
                         button.addEventListener('click', event => {
                             event.stopPropagation();
                             openChartFocus(canvas.id);
@@ -11904,10 +12457,12 @@ function getMonthStatsComplete(year, month, maxDays = null) {
             const customSchedules = JSON.parse(localStorage.getItem('customSchedules') || '{}');
             
             const exportObj = {
-                version: '1.0',
+                version: '1.1',
                 exportDate: new Date().toISOString(),
                 productionData: productionData,
-                customSchedules: customSchedules
+                customSchedules: customSchedules,
+                maintenanceData: getMaintenanceData(),
+                noHelperData: getNoHelperData()
             };
             
             const dataStr = JSON.stringify(exportObj, null, 2);
@@ -11948,7 +12503,13 @@ function getMonthStatsComplete(year, month, maxDays = null) {
                         if (importedData.customSchedules) {
                             localStorage.setItem('customSchedules', JSON.stringify(importedData.customSchedules));
                         }
-                        
+                        if (importedData.maintenanceData) {
+                            setMaintenanceData(importedData.maintenanceData);
+                        }
+                        if (importedData.noHelperData) {
+                            setNoHelperData(importedData.noHelperData);
+                        }
+
                         renderCalendar();
                         showToast('✅ Dane zaimportowane!');
                     }
