@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Statystyki Produkcji Flexo PRO v1.9.3</title>
+    <title>Statystyki Produkcji Flexo PRO v1.9.4</title>
     <style>
         * {
             margin: 0;
@@ -2931,7 +2931,7 @@
 <body>
     <div class="header">
         <div class="header-content">
-            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.3</div>
+            <div class="title">📊 Statystyki Produkcji Flexo PRO v1.9.4</div>
             <div class="header-controls">
                 <div class="sync-status synced" id="syncStatus" onclick="openSyncToolsModal()" title="Ukryty transfer danych aktualnego miesiąca">
                     <div class="sync-dot synced"></div>
@@ -16549,6 +16549,11 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
         function setProductionData(data) {
             localStorage.setItem('productionData', JSON.stringify(data));
 
+            // A user edit wins over a still-pending QR value for the same cell.
+            if (typeof reconcilePendingQrProductionWithLocal === 'function') {
+                reconcilePendingQrProductionWithLocal(data);
+            }
+
             // Sync to Firebase
             if (isFirebaseInitialized) {
                 syncToFirebase('productionData', data);
@@ -16616,6 +16621,146 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                 });
         }
 
+        function stageQrProductionPatch(patch) {
+            const pathPattern = /^productionData\/\d{4}-\d{2}-\d{2}\/[^/]+$/;
+            let existing = {};
+            try {
+                const parsed = JSON.parse(localStorage.getItem('soma3_pending_qr_production') || '{}');
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) existing = parsed;
+            } catch (error) {
+                existing = {};
+            }
+
+            const pending = {};
+            Object.keys(existing).forEach((path) => {
+                const value = existing[path];
+                if (pathPattern.test(path) && typeof value === 'number' && Number.isFinite(value)) {
+                    pending[path] = value;
+                }
+            });
+            if (patch && typeof patch === 'object' && !Array.isArray(patch)) {
+                Object.keys(patch).forEach((path) => {
+                    const value = patch[path];
+                    if (pathPattern.test(path) && typeof value === 'number' && Number.isFinite(value)) {
+                        pending[path] = value;
+                    }
+                });
+            }
+
+            if (Object.keys(pending).length) {
+                localStorage.setItem('soma3_pending_qr_production', JSON.stringify(pending));
+            } else {
+                localStorage.removeItem('soma3_pending_qr_production');
+            }
+            return pending;
+        }
+
+        function mergePendingQrProduction(incoming) {
+            let merged = {};
+            if (incoming && typeof incoming === 'object' && !Array.isArray(incoming)) {
+                try {
+                    merged = JSON.parse(JSON.stringify(incoming));
+                } catch (error) {
+                    merged = {};
+                }
+            }
+
+            let pending = {};
+            try {
+                const parsed = JSON.parse(localStorage.getItem('soma3_pending_qr_production') || '{}');
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) pending = parsed;
+            } catch (error) {
+                pending = {};
+            }
+            const pathPattern = /^productionData\/\d{4}-\d{2}-\d{2}\/[^/]+$/;
+            Object.keys(pending).forEach((path) => {
+                const value = pending[path];
+                if (!pathPattern.test(path) || typeof value !== 'number' || !Number.isFinite(value)) return;
+                const parts = path.split('/');
+                const dayKey = parts[1];
+                const worker = parts[2];
+                if (!merged[dayKey] || typeof merged[dayKey] !== 'object' || Array.isArray(merged[dayKey])) {
+                    merged[dayKey] = {};
+                }
+                merged[dayKey][worker] = value;
+            });
+            return merged;
+        }
+
+        function acknowledgeQrProductionPatch(patch) {
+            const pathPattern = /^productionData\/\d{4}-\d{2}-\d{2}\/[^/]+$/;
+            let pending = {};
+            try {
+                const parsed = JSON.parse(localStorage.getItem('soma3_pending_qr_production') || '{}');
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) pending = parsed;
+            } catch (error) {
+                pending = {};
+            }
+            if (patch && typeof patch === 'object' && !Array.isArray(patch)) {
+                Object.keys(patch).forEach((path) => {
+                    const acknowledged = patch[path];
+                    if (pathPattern.test(path) && typeof acknowledged === 'number' && Number.isFinite(acknowledged) && pending[path] === acknowledged) {
+                        delete pending[path];
+                    }
+                });
+            }
+            if (Object.keys(pending).length) {
+                localStorage.setItem('soma3_pending_qr_production', JSON.stringify(pending));
+            } else {
+                localStorage.removeItem('soma3_pending_qr_production');
+            }
+            return pending;
+        }
+
+        function reconcilePendingQrProductionWithLocal(data) {
+            const pathPattern = /^productionData\/\d{4}-\d{2}-\d{2}\/[^/]+$/;
+            let pending = {};
+            try {
+                const parsed = JSON.parse(localStorage.getItem('soma3_pending_qr_production') || '{}');
+                if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) pending = parsed;
+            } catch (error) {
+                pending = {};
+            }
+            Object.keys(pending).forEach((path) => {
+                if (!pathPattern.test(path)) {
+                    delete pending[path];
+                    return;
+                }
+                const parts = path.split('/');
+                const current = data && data[parts[1]] && data[parts[1]][parts[2]];
+                if (typeof pending[path] !== 'number' || !Number.isFinite(pending[path]) || current !== pending[path]) {
+                    delete pending[path];
+                }
+            });
+            if (Object.keys(pending).length) {
+                localStorage.setItem('soma3_pending_qr_production', JSON.stringify(pending));
+            } else {
+                localStorage.removeItem('soma3_pending_qr_production');
+            }
+            return pending;
+        }
+
+        function flushPendingQrProduction() {
+            if (!isFirebaseInitialized || !database) return Promise.resolve(false);
+            const pending = stageQrProductionPatch({});
+            if (!Object.keys(pending).length) return Promise.resolve(false);
+
+            let request;
+            try {
+                request = database.ref().update(pending);
+            } catch (error) {
+                console.error('QR production retry:', error);
+                return Promise.resolve(false);
+            }
+            return Promise.resolve(request).then(() => {
+                acknowledgeQrProductionPatch(pending);
+                return true;
+            }).catch((error) => {
+                console.error('QR production retry:', error);
+                return false;
+            });
+        }
+
         function loadFromFirebase() {
             if (!isFirebaseInitialized) {
                 console.log('Firebase not initialized, using localStorage only');
@@ -16627,8 +16772,10 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             // Load production data
             database.ref('productionData').once('value', (snapshot) => {
                 const firebaseData = snapshot.val();
-                if (firebaseData) {
-                    localStorage.setItem('productionData', JSON.stringify(firebaseData));
+                const pendingQrData = mergePendingQrProduction(null);
+                const protectedData = mergePendingQrProduction(firebaseData);
+                if (firebaseData || Object.keys(pendingQrData).length) {
+                    localStorage.setItem('productionData', JSON.stringify(protectedData));
                     console.log('✅ Production data loaded from Firebase');
                 }
                 updateSyncStatus('synced', 'Dane z chmury aktualne');
@@ -16694,9 +16841,10 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             // Listen for production data changes
             database.ref('productionData').on('value', (snapshot) => {
                 const incoming = snapshot.val();
-                if (incoming === null && !receivedProduction) return;
+                const pendingQrData = mergePendingQrProduction(null);
+                if (incoming === null && !receivedProduction && !Object.keys(pendingQrData).length) return;
                 receivedProduction = true;
-                const firebaseData = incoming || {};
+                const firebaseData = mergePendingQrProduction(incoming);
                 if (firebaseData) {
                     const localData = getProductionData();
                     const localJson = JSON.stringify(localData);
@@ -16771,6 +16919,10 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                     refreshAfterSync();
                 }
             });
+
+            if (typeof flushPendingQrProduction === 'function') {
+                flushPendingQrProduction();
+            }
         }
 
         function updateSyncStatus(status, text) {
@@ -16817,15 +16969,6 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             // Sync to Firebase
             if (isFirebaseInitialized) {
                 syncToFirebase('customSchedules', customSchedules);
-            }
-        }
-
-        function setMonthlyGoal(goal) {
-            localStorage.setItem('monthlyGoal', goal);
-            
-            // Sync to Firebase
-            if (isFirebaseInitialized) {
-                database.ref('monthlyGoal').set(goal);
             }
         }
 
@@ -16929,7 +17072,8 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             const scheduleDays = Object.keys(payload.s || {}).length;
             const maintenanceEntries = Object.values(payload.a || {}).reduce((sum, values) => sum + values.filter(Boolean).length, 0);
             const noHelperEntries = Object.values(payload.n || {}).reduce((sum, mask) => sum + WORKERS.filter((_, i) => mask & (1 << i)).length, 0);
-            return { productionDays, productionEntries, scheduleDays, maintenanceEntries, noHelperEntries };
+            const productionKg = Object.values(payload.p || {}).reduce((sum, values) => sum + values.reduce((total, value) => total + (value === null ? 0 : value), 0), 0);
+            return { productionDays, productionEntries, productionKg, scheduleDays, maintenanceEntries, noHelperEntries };
         }
 
         function openSyncToolsModal() {
@@ -17089,7 +17233,7 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             const stats = getMonthTransferStats(payload);
             if (output) output.value = code;
             if (panel) panel.classList.add('active');
-            if (summary) summary.textContent = `${MONTHS[payload.m]} ${payload.y}: ${stats.productionEntries} wpisów produkcji z ${stats.productionDays} dni, harmonogram z ${stats.scheduleDays} dni, ${stats.maintenanceEntries} oznaczeń przestoju/nieobecności, ${stats.noHelperEntries} zmian bez pomocnika.`;
+            if (summary) summary.textContent = `${MONTHS[payload.m]} ${payload.y}: ${stats.productionEntries} wpisów produkcji, łącznie ${stats.productionKg} kg z ${stats.productionDays} dni, harmonogram z ${stats.scheduleDays} dni, ${stats.maintenanceEntries} oznaczeń przestoju/nieobecności, ${stats.noHelperEntries} zmian bez pomocnika.`;
             if (frame) {
                 frame.innerHTML = '';
                 try {
@@ -17158,14 +17302,41 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             try {
                 const payload = decodeTransferPayload(input.value);
                 const stats = summarizeMonthTransferImport(payload);
+                const received = getMonthTransferStats(payload);
                 summary.className = 'transfer-summary';
-                summary.textContent = payload.v === 2 ? `${MONTHS[payload.m]} ${payload.y}: pełna kopia miesiąca — zastąpi produkcję, harmonogram, przestoje i brak pomocnika. Inne miesiące bez zmian.` : `${MONTHS[payload.m]} ${payload.y}: do dopisania ${stats.missingEntries} wpisów produkcji i ${stats.missingSchedules} dni harmonogramu. Pominięte jako już istniejące: ${stats.existingEntries} wpisów, ${stats.existingSchedules} dni harmonogramu.`;
+                summary.textContent = payload.v === 2 ? `${MONTHS[payload.m]} ${payload.y}: QR zawiera ${received.productionEntries} wpisów produkcji, łącznie ${received.productionKg} kg. ${received.productionEntries ? "Wpisy z QR zostaną zapisane; pozostałe kilogramy zachowane." : "UWAGA: ten QR nie zawiera kilogramów. Istniejąca produkcja zostanie zachowana."} Harmonogram, przestoje i brak pomocnika zostaną zaktualizowane dla tego miesiąca.` : `${MONTHS[payload.m]} ${payload.y}: do dopisania ${stats.missingEntries} wpisów produkcji i ${stats.missingSchedules} dni harmonogramu. Pominięte jako już istniejące: ${stats.existingEntries} wpisów, ${stats.existingSchedules} dni harmonogramu.`;
                 return payload;
             } catch (error) {
                 summary.className = 'transfer-warning';
                 summary.textContent = `Nie mogę odczytać kodu: ${error.message}`;
                 return null;
             }
+        }
+
+        async function syncQrTransferPatch(patch) {
+            const names = ['productionData', 'customSchedules', 'maintenanceData', 'noHelperData'];
+            const groups = names.map(name => ({ name, patch: Object.fromEntries(Object.entries(patch).filter(([path]) => path.startsWith(name + '/'))) })).filter(group => Object.keys(group.patch).length);
+            updateSyncStatus('syncing', 'Synchronizuję import QR...');
+            const results = await Promise.all(groups.map(async group => {
+                try {
+                    await database.ref().update(group.patch);
+                    if (group.name === 'productionData') acknowledgeQrProductionPatch(group.patch);
+                    return { name: group.name, ok: true };
+                } catch (error) {
+                    console.error('QR sync ' + group.name + ':', error);
+                    return { name: group.name, ok: false, error: error.code || error.message || 'unknown' };
+                }
+            }));
+            const failed = results.filter(result => !result.ok);
+            if (failed.length) {
+                const production = results.find(result => result.name === 'productionData');
+                const prefix = production?.ok ? 'Kilogramy zapisane w chmurze. ' : 'Import zachowany lokalnie. ';
+                const labels = { productionData: 'produkcja', customSchedules: 'harmonogram', maintenanceData: 'przestoje', noHelperData: 'brak pomocnika' };
+                const message = prefix + 'Błąd synchronizacji: ' + failed.map(result => labels[result.name]).join(', ');
+                updateSyncStatus('local', message);
+                showToast('⚠️ ' + message);
+            } else updateSyncStatus('synced', 'Import QR zapisany w chmurze');
+            return results;
         }
 
         function importMonthTransfer() {
@@ -17178,7 +17349,7 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                 showToast('⚠️ Nie mogę odczytać kodu transferu');
                 return;
             }
-            if (payload.v === 2 && !confirm(`Zastąpić dane za ${MONTHS[payload.m]} ${payload.y} danymi z QR?\n\nDotyczy produkcji, harmonogramu, przestojów i braku pomocnika. Puste dni w QR usuną wcześniejsze wpisy z tego miesiąca. Pozostałe miesiące zostaną zachowane. Przed importem powstanie lokalna kopia.`)) return;
+            if (payload.v === 2 && !confirm(`Importować dane za ${MONTHS[payload.m]} ${payload.y}?\n\nQR zawiera ${getMonthTransferStats(payload).productionEntries} wpisów i ${getMonthTransferStats(payload).productionKg} kg. Zapiszę przekazane kilogramy, zachowując pozostałą produkcję. Harmonogram, przestoje i brak pomocnika w tym miesiącu zostaną zastąpione. Przed importem powstanie lokalna kopia.`)) return;
             try {
                 const keys = ['productionData', 'customSchedules', 'maintenanceData', 'noHelperData'];
                 const stores = Object.fromEntries(keys.map(key => [key, JSON.parse(localStorage.getItem(key) || '{}')]));
@@ -17190,13 +17361,13 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                 for (let day = 1; day <= days; day++) {
                     const key = getDayKey(payload.y, payload.m, day);
                     if (payload.v === 2) {
-                        keys.forEach(name => delete stores[name][key]);
+                        keys.filter(name => name !== 'productionData').forEach(name => delete stores[name][key]);
                     }
                     const production = stores.productionData[key] || {};
                     (payload.p[day] || []).forEach((value, i) => {
                         if (value !== null && (payload.v === 2 || production[WORKERS[i]] === undefined || production[WORKERS[i]] === null || production[WORKERS[i]] === '')) {
                             production[WORKERS[i]] = value;
-                            if (payload.v === 1) patch[`productionData/${key}/${WORKERS[i]}`] = value;
+                            patch[`productionData/${key}/${WORKERS[i]}`] = value;
                         }
                     });
                     if (Object.keys(production).length) stores.productionData[key] = production;
@@ -17213,16 +17384,13 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                         });
                         if (Object.keys(maintenance).length) stores.maintenanceData[key] = maintenance;
                         if (Object.keys(helpers).length) stores.noHelperData[key] = helpers;
-                        keys.forEach(name => patch[`${name}/${key}`] = stores[name][key] || null);
+                        keys.filter(name => name !== 'productionData').forEach(name => patch[`${name}/${key}`] = stores[name][key] || null);
                     }
                 }
                 keys.forEach(key => localStorage.setItem(key, JSON.stringify(stores[key])));
-                // One atomic update of transferred dates; never overwrite other months in Firebase.
-                if (isFirebaseInitialized && Object.keys(patch).length) {
-                    updateSyncStatus('syncing', 'Synchronizuję import QR...');
-                    database.ref().update(patch).then(() => updateSyncStatus('synced', 'Import QR zapisany w chmurze'))
-                        .catch(error => { console.error('QR sync:', error); updateSyncStatus('local', 'Import zapisany lokalnie — błąd synchronizacji'); });
-                }
+                // Production is acknowledged independently of optional metadata permissions.
+                stageQrProductionPatch(patch);
+                if (isFirebaseInitialized && Object.keys(patch).length) syncQrTransferPatch(patch);
                 if (currentView === 'dashboard') renderDashboard();
                 else if (currentView === 'monthly') renderCalendar();
                 else if (currentView === 'yearly') renderYearlyStats();
@@ -17230,7 +17398,13 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
                 else if (currentView === 'analytics') renderAnalytics();
                 scheduleChartEnhancements();
                 previewMonthTransfer();
-                showToast(payload.v === 2 ? '📥 Zaktualizowano cały miesiąc z QR.' : '📥 Dopisano brakujące dane ze starszego QR.');
+                const written = Object.entries(patch).filter(([path]) => path.startsWith('productionData/'));
+                const totalKg = written.reduce((sum, [, value]) => sum + value, 0);
+                const receipt = `Zapisano z QR: ${written.length} wpisów produkcji, ${totalKg} kg. Pozostałe kilogramy zachowane.`;
+                localStorage.setItem('soma3_last_qr_receipt', JSON.stringify({ importedAt: new Date().toISOString(), year: payload.y, month: payload.m, entries: written.length, kg: totalKg }));
+                const summary = document.getElementById('monthTransferImportSummary');
+                if (summary) summary.textContent = written.length ? receipt : 'QR nie dostarczył nowych kilogramów. Produkcja zachowana; pozostałe dane zaimportowane.';
+                showToast(written.length ? `📥 ${receipt}` : '⚠️ QR nie dostarczył nowych kilogramów. Sprawdź podsumowanie.');
             } catch (error) {
                 console.error('QR import:', error);
                 showToast('⚠️ Import nie został ukończony. Kopia sprzed importu jest dostępna w narzędziach synchronizacji.');
@@ -17859,6 +18033,9 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
 
         function setMonthlyGoal(goal) {
             localStorage.setItem('monthlyGoal', goal);
+            if (isFirebaseInitialized) {
+                syncToFirebase('monthlyGoal', goal);
+            }
         }
 
         function openGoalSettings() {
