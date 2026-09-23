@@ -16773,7 +16773,7 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             database.ref('productionData').once('value', (snapshot) => {
                 const firebaseData = snapshot.val();
                 const pendingQrData = mergePendingQrProduction(null);
-                const protectedData = mergePendingQrProduction(firebaseData);
+                const protectedData = mergePendingQrProduction(firebaseData || getProductionData());
                 if (firebaseData || Object.keys(pendingQrData).length) {
                     localStorage.setItem('productionData', JSON.stringify(protectedData));
                     console.log('✅ Production data loaded from Firebase');
@@ -16842,9 +16842,12 @@ function findAlignmentPattern(matrix, alignmentPatternQuads, topRight, topLeft, 
             database.ref('productionData').on('value', (snapshot) => {
                 const incoming = snapshot.val();
                 const pendingQrData = mergePendingQrProduction(null);
-                if (incoming === null && !receivedProduction && !Object.keys(pendingQrData).length) return;
+                const isFirstProductionSnapshot = !receivedProduction;
+                if (incoming === null && isFirstProductionSnapshot && !Object.keys(pendingQrData).length) return;
                 receivedProduction = true;
-                const firebaseData = mergePendingQrProduction(incoming);
+                const firebaseData = mergePendingQrProduction(
+                    incoming === null && isFirstProductionSnapshot ? getProductionData() : incoming || {}
+                );
                 if (firebaseData) {
                     const localData = getProductionData();
                     const localJson = JSON.stringify(localData);
